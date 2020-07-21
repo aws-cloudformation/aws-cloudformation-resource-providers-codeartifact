@@ -1,105 +1,100 @@
 {
-    "typeName": "AWS::CodeArtifact::Domain",
-    "description": "An example resource schema demonstrating some basic constructs and validation rules.",
-    "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
-    "definitions": {
-        "InitechDateFormat": {
-            "$comment": "Use the `definitions` block to provide shared resource property schemas",
-            "type": "string",
-            "format": "date-time"
-        },
-        "Memo": {
-            "type": "object",
-            "properties": {
-                "Heading": {
-                    "type": "string"
-                },
-                "Body": {
-                    "type": "string"
-                }
-            },
-            "additionalProperties": false
-        }
+  "typeName": "AWS::CodeArtifact::Domain",
+  "description": "An example resource schema demonstrating some basic constructs and validation rules.",
+  "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
+  "properties": {
+    "DomainName": {
+      "description": " The name of the domain.",
+      "type": "string",
+      "pattern": "[a-z][a-z0-9\\-]{0,48}[a-z0-9]",
+      "minLength": 2,
+      "maxLength": 50
     },
-    "properties": {
-        "TPSCode": {
-            "description": "A TPS Code is automatically generated on creation and assigned as the unique identifier.",
-            "type": "string",
-            "pattern": "^[A-Z]{3,5}[0-9]{8}-[0-9]{4}$"
-        },
-        "Title": {
-            "description": "The title of the TPS report is a mandatory element.",
-            "type": "string",
-            "minLength": 20,
-            "maxLength": 250
-        },
-        "CoverSheetIncluded": {
-            "description": "Required for all TPS Reports submitted after 2/19/1999",
-            "type": "boolean"
-        },
-        "DueDate": {
-            "$ref": "#/definitions/InitechDateFormat"
-        },
-        "ApprovalDate": {
-            "$ref": "#/definitions/InitechDateFormat"
-        },
-        "Memo": {
-            "$ref": "#/definitions/Memo"
-        },
-        "SecondCopyOfMemo": {
-            "description": "In case you didn't get the first one.",
-            "$ref": "#/definitions/Memo"
-        },
-        "TestCode": {
-            "type": "string",
-            "enum": [
-                "NOT_STARTED",
-                "CANCELLED"
-            ]
-        },
-        "Authors": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            }
-        }
+    "DomainOwner": {
+      "description": " The 12-digit account number of the AWS account that owns the domain.",
+      "pattern": "[0-9]{12}",
+      "type": "string"
     },
-    "additionalProperties": false,
-    "required": [
-        "TestCode",
-        "Title"
-    ],
-    "readOnlyProperties": [
-        "/properties/TPSCode"
-    ],
-    "primaryIdentifier": [
-        "/properties/TPSCode"
-    ],
-    "handlers": {
-        "create": {
-            "permissions": [
-                "initech:CreateReport"
-            ]
-        },
-        "read": {
-            "permissions": [
-                "initech:DescribeReport"
-            ]
-        },
-        "update": {
-            "permissions": [
-                "initech:UpdateReport"
-            ]
-        },
-        "delete": {
-            "permissions": [
-                "initech:DeleteReport"
-            ]
-        },
-        "list": {
-            "permissions": [
-                "initech:ListReports"
-            ]
-        }
+    "EncryptionKey": {
+      "description": "The ARN of an AWS Key Management Service (AWS KMS) key associated with a domain.",
+      "type": "string"
+    },
+    "CreatedTime": {
+      "description": "Timestamp of when the domain was created",
+      "type": "string"
+    },
+    "RepositoryCount": {
+      "description": "The number of repositories in the domain.",
+      "type": "integer"
+    },
+    "AssetSizeBytes": {
+      "description": "The current status of a domain. The valid values are",
+      "type": "integer"
+    },
+    "Status": {
+      "description": "The total size of all assets in the domain.",
+      "pattern": "/^(Active|Deleted)$/",
+      "type": "string"
+    },
+    "PolicyDocument": {
+      "description": "valid displayable JSON Aspen policy string to be set as the access control resource policy on the provided domain.",
+      "type": [
+        "object",
+        "string"
+      ],
+      "minLength": 2,
+      "maxLength": 5120
+    },
+    "Arn": {
+      "description": "The ARN of the domain.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
     }
+  },
+  "additionalProperties": false,
+  "createOnlyProperties": [
+    "/properties/EncryptionKey"
+  ],
+  "readOnlyProperties": [
+    "/properties/Arn",
+    "/properties/CreatedTime",
+    "/properties/RepositoryCount",
+    "/properties/AssetSizeBytes"
+  ],
+  "primaryIdentifier": [
+    "/properties/Arn"
+  ],
+  "handlers": {
+    "create": {
+      "permissions": [
+        "codeartifact:CreateDomain",
+        "codeartifact:PutDomainPermissionsPolicy",
+        "codeartifact:GetDomainPermissionsPolicy"
+      ]
+    },
+    "read": {
+      "permissions": [
+        "codeartifact:DescribeDomain"
+      ]
+    },
+    "update": {
+      "permissions": [
+        "codeartifact:PutDomainPermissionsPolicy",
+        "codeartifact:DeleteDomainPermissionsPolicy",
+        "codeartifact:GetDomainPermissionsPolicy"
+      ]
+    },
+    "delete": {
+      "permissions": [
+        "codeartifact:DeleteDomain",
+        "codeartifact:DescribeDomain"
+      ]
+    },
+    "list": {
+      "permissions": [
+        "codeartifact:ListDomains"
+      ]
+    }
+  }
 }
