@@ -1,12 +1,15 @@
 # AWS::CodeArtifact::Domain
 
-Congratulations on starting development! Next steps:
+This package contains the handlers used to provision CodeArtifact Domains
+as CloudFormation Resources.
 
-1. Write the JSON schema describing your resource, `aws-codeartifact-domain.json`
-1. Implement your resource handlers.
-
-The RPDK will automatically generate the correct resource model from the schema whenever the project is built via Maven. You can also do this manually with the following command: `cfn generate`.
-
-> Please don't modify files under `target/generated-sources/rpdk`, as they will be automatically overwritten.
-
-The code uses [Lombok](https://projectlombok.org/), and [you may have to install IDE integrations](https://projectlombok.org/setup/overview) to enable auto-complete for Lombok-annotated classes.
+#### CreateHandler.java
+This has the code necessary when calling `CREATE` resource upon stack creation.
+#### ReadHandler.java
+This has the code necessary when calling `READ` resource. This is called when calling
+`GetAtt` intrinsic function.
+#### UpdateHandler.java
+This has the code necessary when calling `UPDATE` resource. This is called during an update
+stack operation. Updating a AWS::CodeArtifact::Domain would update ResourcePolicies on the domain.
+#### ListHandler.java
+This has the code necessary when calling `LIST` resources.

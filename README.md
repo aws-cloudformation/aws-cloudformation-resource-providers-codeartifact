@@ -1,15 +1,8 @@
-## My Project
+# CloudFormation Resource Provider Package for AWS CodeArtifact
 
-TODO: Fill this README out!
+The CloudFormation Resource Provider Package for AWS CodeArtifact. These providers allow for CloudFormation stacks to provision AWS CodeArtfiact domains and repositories.
 
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+## These resource handlers are still a work in progress and are not yet publicly available. CodeArtifact resources cannot yet be provisioned through CloudFormation.
 
 ## License
 
