@@ -1,17 +1,17 @@
 {
   "typeName": "AWS::CodeArtifact::Domain",
-  "description": "An example resource schema demonstrating some basic constructs and validation rules.",
+  "description": "The resource schema to create a CodeArtifact domain.",
   "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
   "properties": {
     "DomainName": {
-      "description": " The name of the domain.",
+      "description": "The name of the domain.",
       "type": "string",
       "pattern": "[a-z][a-z0-9\\-]{0,48}[a-z0-9]",
       "minLength": 2,
       "maxLength": 50
     },
     "DomainOwner": {
-      "description": " The 12-digit account number of the AWS account that owns the domain.",
+      "description": "The 12-digit account ID of the AWS account that owns the domain.",
       "pattern": "[0-9]{12}",
       "type": "string"
     },
@@ -20,7 +20,7 @@
       "type": "string"
     },
     "CreatedTime": {
-      "description": "Timestamp of when the domain was created",
+      "description": "Timestamp of when the domain was created.",
       "type": "string"
     },
     "RepositoryCount": {
@@ -28,16 +28,19 @@
       "type": "integer"
     },
     "AssetSizeBytes": {
-      "description": "The current status of a domain. The valid values are",
+      "description": "The total size of all assets in the domain.",
       "type": "integer"
     },
     "Status": {
-      "description": "The total size of all assets in the domain.",
-      "pattern": "/^(Active|Deleted)$/",
+      "description": "The current status of a domain.",
+      "enum": [
+        "Active",
+        "Deleted"
+      ],
       "type": "string"
     },
     "PolicyDocument": {
-      "description": "valid displayable JSON Aspen policy string to be set as the access control resource policy on the provided domain.",
+      "description": "The access control resource policy on the provided domain.",
       "type": [
         "object",
         "string"
@@ -54,6 +57,7 @@
   },
   "additionalProperties": false,
   "createOnlyProperties": [
+    "/properties/DomainName",
     "/properties/EncryptionKey"
   ],
   "readOnlyProperties": [
