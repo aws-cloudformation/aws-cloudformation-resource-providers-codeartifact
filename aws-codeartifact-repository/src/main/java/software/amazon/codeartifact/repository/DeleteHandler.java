@@ -42,10 +42,10 @@ public class DeleteHandler extends BaseHandlerStd {
         DeleteRepositoryRequest awsRequest
     ) {
         AwsResponse awsResponse = null;
-        String repositoryName = progress.getResourceModel().getRepositoryName();
         try {
             awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::deleteRepository);
         } catch (final AwsServiceException e) {
+            String repositoryName = progress.getResourceModel().getRepositoryName();
             Translator.throwCfnException(e, Constants.DELETE_REPOSITORY, repositoryName);
         }
 
