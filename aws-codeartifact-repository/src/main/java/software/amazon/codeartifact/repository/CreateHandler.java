@@ -44,11 +44,11 @@ public class CreateHandler extends BaseHandlerStd {
         CreateRepositoryRequest awsRequest
     ) {
         AwsResponse awsResponse = null;
-        String arn = progress.getResourceModel().getRepositoryName();
+        String repositoryName = progress.getResourceModel().getRepositoryName();
         try {
             awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::createRepository);
         } catch (final AwsServiceException e) {
-            Translator.throwCfnException(e, Constants.CREATE_REPOSITORY, arn);
+            Translator.throwCfnException(e, Constants.CREATE_REPOSITORY, repositoryName);
         }
 
         // TODO Add Policy, Upstream, ExternalConnections if provided

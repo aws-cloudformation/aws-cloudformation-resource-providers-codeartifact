@@ -28,6 +28,8 @@ Resources:
                 - "codeartifact:DeleteRepositoryPermissionsPolicy"
                 - "codeartifact:DescribeRepository"
                 - "codeartifact:ListRepositories"
+                - "codeartifact:AssociateExternalConnection"
+                - "codeartifact:DisassociateExternalConnection"
                 - "codeartifact:PutRepositoryPermissionPolicy"
                 - "codeartifact:PutRepositoryPermissionsPolicy"
                 - "codeartifact:UpdateRepository"
