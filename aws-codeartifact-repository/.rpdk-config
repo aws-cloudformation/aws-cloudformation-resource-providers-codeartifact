@@ -1,0 +1,17 @@
+{
+    "typeName": "AWS::CodeArtifact::Repository",
+    "language": "java",
+    "runtime": "java8",
+    "entrypoint": "software.amazon.codeartifact.repository.HandlerWrapper::handleRequest",
+    "testEntrypoint": "software.amazon.codeartifact.repository.HandlerWrapper::testEntrypoint",
+    "settings": {
+        "namespace": [
+            "software",
+            "amazon",
+            "codeartifact",
+            "repository"
+        ],
+        "codegen_template_path": "guided_aws",
+        "protocolVersion": "2.0.0"
+    }
+}
