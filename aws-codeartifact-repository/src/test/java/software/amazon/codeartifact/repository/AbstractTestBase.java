@@ -1,5 +1,7 @@
 package software.amazon.codeartifact.repository;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -13,6 +15,7 @@ import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
+import org.apache.commons.collections.map.HashedMap;
 
 public class AbstractTestBase {
   protected static final String DOMAIN_NAME = "test-domain-name";
@@ -20,6 +23,8 @@ public class AbstractTestBase {
   protected static final String ADMIN_ACCOUNT = "54321";
   protected static final String REPO_ARN = "repoArn";
   protected static final String REPO_NAME = "test-repo-name";
+  protected static final Map<String, Object> TEST_POLICY_DOC = Collections.singletonMap("key", "value");
+  protected static final String TEST_POLICY_DOC_JSON = "{\"key\":\"value\"}";
   protected static final String DESCRIPTION = "repoDescription";
 
   protected static final Credentials MOCK_CREDENTIALS;

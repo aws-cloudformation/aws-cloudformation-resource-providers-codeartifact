@@ -37,6 +37,26 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 2048
+    },
+    "ExternalConnections": {
+      "description": "An array of external connections associated with the repository.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Upstreams": {
+      "description": "A list of upstream repositories to associate with the repository.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "PolicyDocument": {
+      "description": "The access control resource policy on the provided repository.",
+      "type": "object",
+      "minLength": 2,
+      "maxLength": 5120
     }
   },
   "additionalProperties": false,
