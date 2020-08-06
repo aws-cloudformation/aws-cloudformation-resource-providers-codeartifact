@@ -63,9 +63,6 @@ public class CreateHandlerTest extends AbstractTestBase {
     @Mock
     CodeartifactClient codeartifactClient;
 
-    private final String UPSTREAM_0 = "upstream0";
-    private final String UPSTREAM_1 = "upstream1";
-
     @BeforeEach
     public void setup() {
         proxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
@@ -127,13 +124,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
+        assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
@@ -143,13 +134,11 @@ public class CreateHandlerTest extends AbstractTestBase {
     public void handleRequest_withUpstreams() {
         final CreateHandler handler = new CreateHandler();
 
-        List<String> upstreams = Arrays.asList(UPSTREAM_0, UPSTREAM_1);
-
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .upstreams(upstreams)
+            .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .build();
 
@@ -158,7 +147,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(upstreams)
+            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -169,10 +158,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
-            .upstreams(
-                UpstreamRepositoryInfo.builder().repositoryName("upstream0").build(),
-                UpstreamRepositoryInfo.builder().repositoryName("upstream1").build()
-            )
             .domainName(DOMAIN_NAME)
             .build();
 
@@ -194,13 +179,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
+        assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
@@ -256,13 +235,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
+        assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
@@ -289,7 +262,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .externalConnections(Collections.singletonList("public:npmjs"))
+            .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
             .build();
 
@@ -330,17 +303,10 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
+        assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
-
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
@@ -388,7 +354,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
-
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 

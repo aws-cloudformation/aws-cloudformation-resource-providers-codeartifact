@@ -1,6 +1,8 @@
 package software.amazon.codeartifact.repository;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -14,8 +16,12 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
+import software.amazon.cloudformation.proxy.OperationStatus;
+import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import org.apache.commons.collections.map.HashedMap;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AbstractTestBase {
   protected static final String DOMAIN_NAME = "test-domain-name";
@@ -26,6 +32,12 @@ public class AbstractTestBase {
   protected static final Map<String, Object> TEST_POLICY_DOC = Collections.singletonMap("key", "value");
   protected static final String TEST_POLICY_DOC_JSON = "{\"key\":\"value\"}";
   protected static final String DESCRIPTION = "repoDescription";
+  protected final String UPSTREAM_0 = "upstream0";
+  protected final String UPSTREAM_1 = "upstream1";
+  protected final String NPM_EC = "public:npmjs";
+  protected final String PYPI_EC = "public:pypi";
+
+  protected final List<String> UPSTREAMS = Arrays.asList(UPSTREAM_0,UPSTREAM_1);
 
   protected static final Credentials MOCK_CREDENTIALS;
   protected static final LoggerProxy logger;
@@ -75,5 +87,18 @@ public class AbstractTestBase {
         return sdkClient;
       }
     };
+  }
+
+  protected void assertSuccess(
+      ProgressEvent<ResourceModel, CallbackContext> response,
+      ResourceModel desiredOutputModel
+  ) {
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+    assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+    assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+    assertThat(response.getResourceModels()).isNull();
+    assertThat(response.getMessage()).isNull();
+    assertThat(response.getErrorCode()).isNull();
   }
 }

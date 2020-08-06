@@ -1,11 +1,21 @@
 package software.amazon.codeartifact.repository;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.amazonaws.util.CollectionUtils;
+import com.google.common.collect.Sets;
+
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
+import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
+import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
@@ -22,88 +32,145 @@ public class UpdateHandler extends BaseHandlerStd {
 
         this.logger = logger;
 
-        // TODO: Adjust Progress Chain according to your implementation
-        // https://github.com/aws-cloudformation/cloudformation-cli-java-plugin/blob/master/src/main/java/software/amazon/cloudformation/proxy/CallChain.java
+        final ResourceModel model = request.getDesiredResourceState();
+
+        final Set<String> requestedExternalConnections = Translator.streamOfOrEmpty(model.getExternalConnections())
+            .collect(Collectors.toSet());
+
+        DescribeRepositoryResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
+            Translator.translateToReadRequest(model), proxyClient.client()::describeRepository);
+
+        final Set<String> currentExternalConnections =
+            Translator.translateExternalConnectionFromRepoDescription(describeDomainResponse.repository());
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
-            // STEP 1 [first update/stabilize progress chain - required for resource update]
-            .then(progress ->
-                // STEP 1.0 [initialize a proxy context]
-                // Implement client invocation of the update request through the proxyClient, which is already initialised with
-                // caller credentials, correct region and retry settings
-                proxy.initiate("AWS-CodeArtifact-Repository::Update::first", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
-
-                    // STEP 1.1 [TODO: construct a body of a request]
-                    .translateToServiceRequest(Translator::translateToFirstUpdateRequest)
-
-                    // STEP 1.2 [TODO: make an api call]
-                    .makeServiceCall((awsRequest, client) -> {
-                        AwsResponse awsResponse = null;
-                        try {
-
-                            // TODO: put your update resource code here
-
-                        } catch (final AwsServiceException e) {
-                            /*
-                            * While the handler contract states that the handler must always return a progress event,
-                            * you may throw any instance of BaseHandlerException, as the wrapper map it to a progress event.
-                            * Each BaseHandlerException maps to a specific error code, and you should map service exceptions as closely as possible
-                            * to more specific error codes
-                            */
-                            throw new CfnGeneralServiceException(ResourceModel.TYPE_NAME, e);
-                        }
-
-                        logger.log(String.format("%s has successfully been updated.", ResourceModel.TYPE_NAME));
-                        return awsResponse;
-                    })
-
-                    // STEP 1.3 [TODO: stabilize step is not necessarily required but typically involves describing the resource until it is in a certain status, though it can take many forms]
-                    // stabilization step may or may not be needed after each API call
-                    // for more information -> https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-test-contract.html
-                    .stabilize((awsRequest, awsResponse, client, model, context) -> {
-                        // TODO: put your stabilization code here
-
-                        final boolean stabilized = true;
-
-                        logger.log(String.format("%s [%s] update has stabilized: %s", ResourceModel.TYPE_NAME, model.getPrimaryIdentifier(), stabilized));
-                        return stabilized;
-                    })
-                    .progress())
-
-            // If your resource is provisioned through multiple API calls, then the following pattern is required (and might take as many postUpdate callbacks as necessary)
-            // STEP 2 [second update/stabilize progress chain]
-            .then(progress ->
-                    // STEP 2.0 [initialize a proxy context]
-                    // If your resource is provisioned through multiple API calls, you will need to apply each subsequent update
-                    // step in a discrete call/stabilize chain to ensure the entire resource is provisioned as intended.
-                    proxy.initiate("AWS-CodeArtifact-Repository::Update::second", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
-
-                    // STEP 2.1 [TODO: construct a body of a request]
-                    .translateToServiceRequest(Translator::translateToSecondUpdateRequest)
-
-                    // STEP 2.2 [TODO: make an api call]
-                    .makeServiceCall((awsRequest, client) -> {
-                        AwsResponse awsResponse = null;
-                        try {
-
-                            // TODO: put your post update resource code here
-
-                        } catch (final AwsServiceException e) {
-                            /*
-                            * While the handler contract states that the handler must always return a progress event,
-                            * you may throw any instance of BaseHandlerException, as the wrapper map it to a progress event.
-                            * Each BaseHandlerException maps to a specific error code, and you should map service exceptions as closely as possible
-                            * to more specific error codes
-                            */
-                            throw new CfnGeneralServiceException(ResourceModel.TYPE_NAME, e);
-                        }
-
-                        logger.log(String.format("%s has successfully been updated.", ResourceModel.TYPE_NAME));
-                        return awsResponse;
-                    })
-                    .progress())
-
-            // STEP 3 [TODO: describe call/chain to return the resource model]
+            .then(progress -> updateRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
+            .then(progress -> {
+                Set<String> externalConnectionsToRemove = Sets.difference(currentExternalConnections, requestedExternalConnections);
+                return disassociateExternalConnections(progress, callbackContext, request, proxyClient, externalConnectionsToRemove, logger);
+            })
+            .then(progress -> {
+                Set<String> externalConnectionsToAdd = Sets.difference(requestedExternalConnections, currentExternalConnections);
+                return associateExternalConnections(progress, callbackContext, request, proxyClient, externalConnectionsToAdd, logger);
+            })
+            .then(progress -> updateRepository(proxy, progress, callbackContext, proxyClient, logger))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
     }
+
+    private ProgressEvent<ResourceModel, CallbackContext> updateRepository(
+        final AmazonWebServicesClientProxy proxy,
+        final ProgressEvent<ResourceModel, CallbackContext> progress,
+        final CallbackContext callbackContext,
+        final ProxyClient<CodeartifactClient> proxyClient, Logger logger
+    ) {
+        return proxy.initiate("AWS-CodeArtifact-Repository::Create", proxyClient,progress.getResourceModel(), callbackContext)
+            .translateToServiceRequest(Translator::translateToUpdateRepository)
+            .makeServiceCall((awsRequest, client) -> {
+                AwsResponse awsResponse = null;
+                try {
+                    awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::updateRepository);
+                } catch (final AwsServiceException e) {
+                    String repositoryName = progress.getResourceModel().getRepositoryName();
+                    Translator.throwCfnException(e, Constants.CREATE_REPOSITORY, repositoryName);
+                }
+                logger.log(String.format("%s successfully created.", ResourceModel.TYPE_NAME));
+                return awsResponse;
+            })
+            .progress();
+    }
+
+    protected ProgressEvent<ResourceModel, CallbackContext> updateRepositoryPermissionsPolicy(
+        final AmazonWebServicesClientProxy proxy,
+        final ProgressEvent<ResourceModel, CallbackContext> progress,
+        final CallbackContext callbackContext,
+        final ResourceHandlerRequest<ResourceModel> request,
+        final ProxyClient<CodeartifactClient> proxyClient,
+        final Logger logger
+    ) {
+        final ResourceModel desiredModel = progress.getResourceModel();
+        if (desiredModel.getPolicyDocument() != null) {
+            return putRepositoryPermissionsPolicy(proxy, progress, callbackContext, proxyClient, logger);
+        }
+        return deleteRepositoryPermissionsPolicy(proxy, progress, callbackContext, proxyClient, logger);
+    }
+
+    protected ProgressEvent<ResourceModel, CallbackContext> deleteRepositoryPermissionsPolicy(
+        final AmazonWebServicesClientProxy proxy,
+        final ProgressEvent<ResourceModel, CallbackContext> progress,
+        final CallbackContext callbackContext,
+        final ProxyClient<CodeartifactClient> proxyClient,
+        final Logger logger
+    ) {
+        final ResourceModel desiredModel = progress.getResourceModel();
+
+        if (desiredModel.getPolicyDocument() != null) {
+            return ProgressEvent.progress(desiredModel, callbackContext);
+        }
+
+        return proxy.initiate("AWS-CodeArtifact-Repository::Update::DeleteRepositoryPermissionsPolicy", proxyClient,
+            progress.getResourceModel(), progress.getCallbackContext())
+            .translateToServiceRequest(Translator::translateDeletePermissionsPolicyRequest)
+            .makeServiceCall((awsRequest, client) -> {
+                DeleteRepositoryPermissionsPolicyResponse awsResponse = null;
+                try {
+                    awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::deleteRepositoryPermissionsPolicy);
+                    logger.log("Repository permission policy successfully deleted.");
+                } catch (final AwsServiceException e) {
+                    String domainName = desiredModel.getDomainName();
+                    Translator.throwCfnException(e, Constants.PUT_REPOSITORY_POLICY, domainName);
+                }
+                return awsResponse;
+            })
+            .stabilize((awsRequest, awsResponse, client, model, context) -> policyIsDeleted(model, client))
+            .progress();
+    }
+
+    protected ProgressEvent<ResourceModel, CallbackContext> disassociateExternalConnections(
+        ProgressEvent<ResourceModel, CallbackContext> progress,
+        final CallbackContext callbackContext,
+        final ResourceHandlerRequest<ResourceModel> request,
+        ProxyClient<CodeartifactClient> proxyClient,
+        Set<String> externalConnectionsToRemove,
+        Logger logger
+    ) {
+        ResourceModel model = request.getDesiredResourceState();
+        logger.log(String.format("Removing external connections: %s", externalConnectionsToRemove.toString()));
+
+        if (CollectionUtils.isNullOrEmpty(externalConnectionsToRemove)) {
+            logger.log("No external connections to remove.");
+            // Nothing to remove, continue
+            return ProgressEvent.progress(model, callbackContext);
+        }
+
+        // Loop is currently not necessary because only 1 external connection is allowed, leaving this in for
+        // when multiple are supported
+        externalConnectionsToRemove.forEach(ec -> {
+            try {
+                DisassociateExternalConnectionRequest disassociateExternalConnectionRequest = Translator.translateDisassociateExternalConnectionsRequest(model, ec);
+                proxyClient.injectCredentialsAndInvokeV2(disassociateExternalConnectionRequest, proxyClient.client()::disassociateExternalConnection);
+            } catch (final AwsServiceException e) {
+                String repositoryName = progress.getResourceModel().getRepositoryName();
+                Translator.throwCfnException(e, Constants.ASSOCIATE_EXTERNAL_CONNECTION, repositoryName);
+            }
+            logger.log(String.format("Successfully disassociated external connection: %s", ec));
+        });
+
+        return ProgressEvent.<ResourceModel, CallbackContext>builder()
+            .resourceModel(model)
+            .status(OperationStatus.IN_PROGRESS)
+            .build();
+    }
+
+    private boolean policyIsDeleted(
+        final ResourceModel model, final ProxyClient<CodeartifactClient> proxyClient
+    ) {
+        try {
+            proxyClient.injectCredentialsAndInvokeV2(Translator.translateToGetRepositoryPermissionsPolicy(model), proxyClient.client()::getRepositoryPermissionsPolicy);
+            return false;
+        } catch (ResourceNotFoundException e) {
+            logger.log("Deleted permission policy successfully stabilized.");
+            return true;
+        }
+    }
+
 }

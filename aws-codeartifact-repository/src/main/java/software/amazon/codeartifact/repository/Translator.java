@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissio
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
+import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
@@ -72,7 +73,12 @@ public class Translator {
    * @return list of UpstreamRepository
    */
   static List<UpstreamRepository> translateToUpstreamList(final ResourceModel model) {
-    return streamOfOrEmpty(model.getUpstreams())
+    if (model.getUpstreams() == null) {
+      return null;
+    }
+
+    return model.getUpstreams()
+        .stream()
         .map(upstream -> UpstreamRepository.builder()
             .repositoryName(upstream)
             .build()
@@ -170,6 +176,7 @@ public class Translator {
   static GetRepositoryPermissionsPolicyRequest translateToGetRepositoryPermissionsPolicy(final ResourceModel model) {
     return GetRepositoryPermissionsPolicyRequest.builder()
         .domain(model.getDomainName())
+        .repository(model.getRepositoryName())
         .domainOwner(model.getDomainOwner())
         .build();
   }
@@ -223,8 +230,16 @@ public class Translator {
     return DisassociateExternalConnectionRequest.builder()
         .domain(model.getDomainName())
         .domainOwner(model.getDomainOwner())
+        .repository(model.getRepositoryName())
         .externalConnection(externalConnectionToRemove)
         .build();
+  }
+
+
+  public static Set<String> translateExternalConnectionFromRepoDescription(RepositoryDescription repository) {
+    return streamOfOrEmpty(repository.externalConnections())
+        .map(RepositoryExternalConnectionInfo::externalConnectionName)
+        .collect(Collectors.toSet());
   }
 
   /**
@@ -236,6 +251,7 @@ public class Translator {
     return UpdateRepositoryRequest.builder()
         .domain(model.getDomainName())
         .domainOwner(model.getDomainOwner())
+        .repository(model.getRepositoryName())
         .description(model.getDescription())
         .upstreams(translateToUpstreamList(model))
         .build();
@@ -295,4 +311,5 @@ public class Translator {
     }
     throw new CfnGeneralServiceException(exception);
   }
+
 }

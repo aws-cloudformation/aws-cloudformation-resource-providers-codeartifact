@@ -54,8 +54,9 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
       final Logger logger
   ) {
       ResourceModel resourceModel = request.getDesiredResourceState();
-
+      logger.log(String.format("Adding external connections: %s", externalConnectionsToAdd.toString()));
       if (CollectionUtils.isNullOrEmpty(externalConnectionsToAdd)) {
+          logger.log("No external connections to add");
           // Nothing to add, continue
           return ProgressEvent.progress(resourceModel, callbackContext);
       }
