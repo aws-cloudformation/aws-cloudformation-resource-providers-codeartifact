@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +41,8 @@ import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 @ExtendWith(MockitoExtension.class)
 public class UpdateHandlerTest extends AbstractTestBase {
 
@@ -69,13 +72,13 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withPolicyDoc() {
+    public void handleRequest_simpleSuccess_withPolicyDoc_withSamePolicyDoc() throws JsonProcessingException {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
-            .policyDocument(TEST_POLICY_DOC)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -88,15 +91,44 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
-        PutRepositoryPermissionsPolicyResponse putRepoPolicyResponse = PutRepositoryPermissionsPolicyResponse.builder()
-            .policy(
-                ResourcePolicy.builder()
-                    .document(TEST_POLICY_DOC_JSON)
-                    .build()
-            )
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class))).thenReturn(putRepoPolicyResponse);
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .previousResourceState(resourceModel(TEST_POLICY_DOC_0))
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+    }
+
+    @Test
+    public void handleRequest_simpleSuccess_withPolicyDoc_withUpdatedPolicyDoc() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -106,6 +138,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(TEST_POLICY_DOC_1))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -113,19 +146,56 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
-        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
         verify(codeartifactClient).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withUpstreams() {
+    public void handleRequest_simpleSuccess_deletePolicyDoc() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .previousResourceState(resourceModel(TEST_POLICY_DOC_0))
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class));
+    }
+
+    @Test
+    public void handleRequest_simpleSuccess_withUpstreams() {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .upstreams(UPSTREAMS)
-            .policyDocument(TEST_POLICY_DOC)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
@@ -165,6 +235,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -176,7 +247,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withNewExternalConnections() {
+    public void handleRequest_simpleSuccess_withNewExternalConnections() {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
@@ -211,15 +282,10 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
-        when(proxyClient.client().deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class)))
-            .thenReturn(DeleteRepositoryPermissionsPolicyResponse.builder().build());
-
-        // this happens when permission policy is stabilized
-        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(
-            ResourceNotFoundException.class);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -232,7 +298,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withSameExternalConnections() {
+    public void handleRequest_simpleSuccess_withSameExternalConnections() {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
@@ -267,14 +333,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
-        when(proxyClient.client().deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class)))
-            .thenReturn(DeleteRepositoryPermissionsPolicyResponse.builder().build());
         // this happens when permission policy is stabilized
-        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(
-            ResourceNotFoundException.class);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -287,7 +350,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withExistingExternalConnections() {
+    public void handleRequest_simpleSuccess_withExistingExternalConnections() {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
@@ -321,14 +384,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
-        when(proxyClient.client().deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class)))
-            .thenReturn(DeleteRepositoryPermissionsPolicyResponse.builder().build());
         // this happens when permission policy is stabilized
-        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(
-            ResourceNotFoundException.class);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -341,7 +401,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_SimpleSuccess_withTooManyExternalConnections() {
+    public void handleRequest_simpleSuccess_withMultipleExternalConnections() {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
@@ -360,25 +420,18 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
-        when(proxyClient.client().deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class)))
-            .thenReturn(DeleteRepositoryPermissionsPolicyResponse.builder().build());
-
-        // this happens when permission policy is stabilized
-        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(
-            ResourceNotFoundException.class);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
-        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
-        verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
-        verify(codeartifactClient, never()).disassociateExternalConnection(any(DisassociateExternalConnectionRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
     RepositoryDescription RepoInfoWithOutExternalConnections() {
@@ -425,5 +478,16 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
             .build();
+    }
+    ResourceModel resourceModel(Map<String, Object> policyDoc) {
+        ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .build();
+
+        if (policyDoc != null) {
+            model.setPermissionsPolicyDocument(policyDoc);
+        }
+        return model;
     }
 }

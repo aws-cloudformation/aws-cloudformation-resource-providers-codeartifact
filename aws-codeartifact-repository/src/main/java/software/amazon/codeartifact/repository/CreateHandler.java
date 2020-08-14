@@ -29,7 +29,7 @@ public class CreateHandler extends BaseHandlerStd {
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
             .then(progress -> createRepository(proxy, progress, proxyClient))
-            .then(progress -> putRepositoryPermissionsPolicy(proxy, progress, callbackContext, proxyClient, logger))
+            .then(progress -> putRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
             .then(progress -> associateExternalConnections(progress, callbackContext, request, proxyClient, externalConnectionsToAdd, logger))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
     }

@@ -21,15 +21,20 @@ import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import org.apache.commons.collections.map.HashedMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AbstractTestBase {
+  public static final ObjectMapper MAPPER = new ObjectMapper();
   protected static final String DOMAIN_NAME = "test-domain-name";
   protected static final String DOMAIN_OWNER = "12345";
   protected static final String ADMIN_ACCOUNT = "54321";
   protected static final String REPO_ARN = "repoArn";
   protected static final String REPO_NAME = "test-repo-name";
-  protected static final Map<String, Object> TEST_POLICY_DOC = Collections.singletonMap("key", "value");
+  protected static final Map<String, Object> TEST_POLICY_DOC_0 = Collections.singletonMap("key0", "value0");
+  protected static final Map<String, Object> TEST_POLICY_DOC_1 = Collections.singletonMap("key1", "value1");
+
   protected static final String TEST_POLICY_DOC_JSON = "{\"key\":\"value\"}";
   protected static final String DESCRIPTION = "repoDescription";
   protected final String UPSTREAM_0 = "upstream0";

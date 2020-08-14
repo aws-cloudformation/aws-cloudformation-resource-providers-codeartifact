@@ -1,27 +1,25 @@
 package software.amazon.codeartifact.repository;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.AssociateExternalConnectionRequest;
-import software.amazon.awssdk.services.codeartifact.model.AssociateExternalConnectionResponse;
-import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyResponse;
-import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
-import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
-import software.amazon.cloudformation.proxy.HandlerErrorCode;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override
   public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -61,11 +59,6 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
           return ProgressEvent.progress(resourceModel, callbackContext);
       }
 
-      if (externalConnectionsToAdd.size() > 1) {
-          return ProgressEvent.failed(resourceModel, callbackContext, HandlerErrorCode.InvalidRequest,
-              "ExternalConnections for repositories are currently limited to 1.");
-      }
-
       // Loop is currently not necessary because only 1 external connection is allowed, leaving this in for
       // when multiple are supported
       externalConnectionsToAdd.forEach(ec -> {
@@ -91,14 +84,18 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
       final AmazonWebServicesClientProxy proxy,
       final ProgressEvent<ResourceModel, CallbackContext> progress,
       final CallbackContext callbackContext,
+      final ResourceHandlerRequest<ResourceModel> request,
       final ProxyClient<CodeartifactClient> proxyClient,
       final Logger logger
   ) {
       final ResourceModel desiredModel = progress.getResourceModel();
-      if (desiredModel.getPolicyDocument() == null) {
+      final ResourceModel previousModel = request.getPreviousResourceState();
+
+      if (desiredModel.getPermissionsPolicyDocument() == null || policyIsUnchanged(desiredModel, previousModel)) {
           return ProgressEvent.progress(desiredModel, callbackContext);
       }
-      return proxy.initiate("AWS-CodeArtifact-Repository::Update::PutRepositoryPermissionsPolicy", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
+      return proxy.initiate(
+          "CodeArtifact::PutRepositoryPermissionsPolicy", proxyClient, desiredModel, callbackContext)
           .translateToServiceRequest(Translator::translatePutPermissionsPolicyRequest)
           .makeServiceCall((awsRequest, client) -> {
               PutRepositoryPermissionsPolicyResponse awsResponse = null;
@@ -111,17 +108,20 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
               }
               return awsResponse;
           })
-          .stabilize((awsRequest, awsResponse, client, model, context) -> policyIsStabilized(model, client))
           .progress();
   }
 
-  private boolean policyIsStabilized(final ResourceModel model, final ProxyClient<CodeartifactClient> proxyClient) {
-      try {
-          proxyClient.injectCredentialsAndInvokeV2(Translator.translateToGetRepositoryPermissionsPolicy(model), proxyClient.client()::getRepositoryPermissionsPolicy);
-          return true;
-      } catch (ResourceNotFoundException e) {
+  boolean policyIsUnchanged(final ResourceModel desiredModel, final ResourceModel previousModel) {
+      if (previousModel == null) {
           return false;
       }
-  }
+
+      if (desiredModel.getPermissionsPolicyDocument() == null || previousModel.getPermissionsPolicyDocument() == null) {
+          return false;
+      }
+      JsonNode desiredPolicy = MAPPER.valueToTree(desiredModel.getPermissionsPolicyDocument());
+      JsonNode currentPolicy = MAPPER.valueToTree(previousModel.getPermissionsPolicyDocument());
+      return desiredPolicy.equals(currentPolicy);
+    }
 
 }

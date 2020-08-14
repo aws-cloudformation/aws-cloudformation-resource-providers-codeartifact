@@ -63,7 +63,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final CallbackContext callbackContext,
         final ProxyClient<CodeartifactClient> proxyClient, Logger logger
     ) {
-        return proxy.initiate("AWS-CodeArtifact-Repository::Create", proxyClient,progress.getResourceModel(), callbackContext)
+        return proxy.initiate("AWS-CodeArtifact-Repository::Update", proxyClient,progress.getResourceModel(), callbackContext)
             .translateToServiceRequest(Translator::translateToUpdateRepository)
             .makeServiceCall((awsRequest, client) -> {
                 AwsResponse awsResponse = null;
@@ -71,9 +71,9 @@ public class UpdateHandler extends BaseHandlerStd {
                     awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::updateRepository);
                 } catch (final AwsServiceException e) {
                     String repositoryName = progress.getResourceModel().getRepositoryName();
-                    Translator.throwCfnException(e, Constants.CREATE_REPOSITORY, repositoryName);
+                    Translator.throwCfnException(e, Constants.UPDATE_REPOSITORY, repositoryName);
                 }
-                logger.log(String.format("%s successfully created.", ResourceModel.TYPE_NAME));
+                logger.log(String.format("%s successfully updated.", ResourceModel.TYPE_NAME));
                 return awsResponse;
             })
             .progress();
@@ -88,27 +88,28 @@ public class UpdateHandler extends BaseHandlerStd {
         final Logger logger
     ) {
         final ResourceModel desiredModel = progress.getResourceModel();
-        if (desiredModel.getPolicyDocument() != null) {
-            return putRepositoryPermissionsPolicy(proxy, progress, callbackContext, proxyClient, logger);
+        if (desiredModel.getPermissionsPolicyDocument() != null) {
+            return putRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger);
         }
-        return deleteRepositoryPermissionsPolicy(proxy, progress, callbackContext, proxyClient, logger);
+        return deleteRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger);
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> deleteRepositoryPermissionsPolicy(
         final AmazonWebServicesClientProxy proxy,
         final ProgressEvent<ResourceModel, CallbackContext> progress,
         final CallbackContext callbackContext,
+        final ResourceHandlerRequest<ResourceModel> request,
         final ProxyClient<CodeartifactClient> proxyClient,
         final Logger logger
     ) {
-        final ResourceModel desiredModel = progress.getResourceModel();
+        final ResourceModel desiredModel = request.getDesiredResourceState();
+        final ResourceModel previousModel = request.getPreviousResourceState();
 
-        if (desiredModel.getPolicyDocument() != null) {
+        if (desiredModel.getPermissionsPolicyDocument() != null || previousModel.getPermissionsPolicyDocument() == null) {
             return ProgressEvent.progress(desiredModel, callbackContext);
         }
 
-        return proxy.initiate("AWS-CodeArtifact-Repository::Update::DeleteRepositoryPermissionsPolicy", proxyClient,
-            progress.getResourceModel(), progress.getCallbackContext())
+        return proxy.initiate("AWS-CodeArtifact-Repository::Update::DeleteRepositoryPermissionsPolicy", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
             .translateToServiceRequest(Translator::translateDeletePermissionsPolicyRequest)
             .makeServiceCall((awsRequest, client) -> {
                 DeleteRepositoryPermissionsPolicyResponse awsResponse = null;
@@ -117,11 +118,10 @@ public class UpdateHandler extends BaseHandlerStd {
                     logger.log("Repository permission policy successfully deleted.");
                 } catch (final AwsServiceException e) {
                     String domainName = desiredModel.getDomainName();
-                    Translator.throwCfnException(e, Constants.PUT_REPOSITORY_POLICY, domainName);
+                    Translator.throwCfnException(e, Constants.DELETE_REPOSITORY_POLICY, domainName);
                 }
                 return awsResponse;
             })
-            .stabilize((awsRequest, awsResponse, client, model, context) -> policyIsDeleted(model, client))
             .progress();
     }
 
@@ -150,7 +150,7 @@ public class UpdateHandler extends BaseHandlerStd {
                 proxyClient.injectCredentialsAndInvokeV2(disassociateExternalConnectionRequest, proxyClient.client()::disassociateExternalConnection);
             } catch (final AwsServiceException e) {
                 String repositoryName = progress.getResourceModel().getRepositoryName();
-                Translator.throwCfnException(e, Constants.ASSOCIATE_EXTERNAL_CONNECTION, repositoryName);
+                Translator.throwCfnException(e, Constants.DISASSOCIATE_EXTERNAL_CONNECTION, repositoryName);
             }
             logger.log(String.format("Successfully disassociated external connection: %s", ec));
         });
@@ -159,18 +159,6 @@ public class UpdateHandler extends BaseHandlerStd {
             .resourceModel(model)
             .status(OperationStatus.IN_PROGRESS)
             .build();
-    }
-
-    private boolean policyIsDeleted(
-        final ResourceModel model, final ProxyClient<CodeartifactClient> proxyClient
-    ) {
-        try {
-            proxyClient.injectCredentialsAndInvokeV2(Translator.translateToGetRepositoryPermissionsPolicy(model), proxyClient.client()::getRepositoryPermissionsPolicy);
-            return false;
-        } catch (ResourceNotFoundException e) {
-            logger.log("Deleted permission policy successfully stabilized.");
-            return true;
-        }
     }
 
 }

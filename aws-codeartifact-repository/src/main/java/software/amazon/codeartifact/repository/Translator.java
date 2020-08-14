@@ -1,6 +1,8 @@
 package software.amazon.codeartifact.repository;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class Translator {
    */
   static List<UpstreamRepository> translateToUpstreamList(final ResourceModel model) {
     if (model.getUpstreams() == null) {
-      return null;
+      return Collections.emptyList();
     }
 
     return model.getUpstreams()
@@ -146,7 +148,7 @@ public class Translator {
           .domain(resourceModel.getDomainName())
           .repository(resourceModel.getRepositoryName())
           .domainOwner(resourceModel.getDomainOwner())
-          .policyDocument(MAPPER.writeValueAsString(resourceModel.getPolicyDocument()))
+          .policyDocument(MAPPER.writeValueAsString(resourceModel.getPermissionsPolicyDocument()))
           .build();
     } catch (final JsonProcessingException e) {
         throw new CfnInvalidRequestException(e);

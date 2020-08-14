@@ -10,7 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,20 +26,20 @@ import static org.mockito.Mockito.when;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
+import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.AssociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
-import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
-import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
+import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
@@ -187,14 +188,14 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_withRepoPolicy() {
+    public void handleRequest_withRepoPolicy() throws JsonProcessingException {
         final CreateHandler handler = new CreateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .policyDocument(TEST_POLICY_DOC)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .description(DESCRIPTION)
             .build();
 
@@ -248,9 +249,8 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         assertThat(capturedRequest.domain()).isEqualTo(DOMAIN_NAME);
         assertThat(capturedRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
-        assertThat(capturedRequest.policyDocument()).isEqualTo(TEST_POLICY_DOC_JSON);
+        assertThat(capturedRequest.policyDocument()).isEqualTo(MAPPER.writeValueAsString(TEST_POLICY_DOC_0));
 
-        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
@@ -350,11 +350,11 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
         assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(OperationStatus.FAILED);
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
-        verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
 
@@ -447,6 +447,29 @@ public class CreateHandlerTest extends AbstractTestBase {
             .build();
 
         assertThrows(CfnServiceInternalErrorException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+    }
+
+    @Test
+    public void handleRequest_accessDeniedException() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .description(DESCRIPTION)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenThrow(AccessDeniedException.class);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        assertThrows(CfnAccessDeniedException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
