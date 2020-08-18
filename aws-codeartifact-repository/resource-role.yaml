@@ -23,14 +23,13 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                - "codeartifact:AssociateExternalConnection"
                 - "codeartifact:CreateRepository"
                 - "codeartifact:DeleteRepository"
                 - "codeartifact:DeleteRepositoryPermissionsPolicy"
                 - "codeartifact:DescribeRepository"
-                - "codeartifact:ListRepositories"
-                - "codeartifact:AssociateExternalConnection"
                 - "codeartifact:DisassociateExternalConnection"
-                - "codeartifact:PutRepositoryPermissionPolicy"
+                - "codeartifact:ListRepositories"
                 - "codeartifact:PutRepositoryPermissionsPolicy"
                 - "codeartifact:UpdateRepository"
                 Resource: "*"

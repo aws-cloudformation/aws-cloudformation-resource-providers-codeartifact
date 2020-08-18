@@ -1,21 +1,40 @@
 package software.amazon.codeartifact.repository;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
+import software.amazon.awssdk.services.codeartifact.model.AssociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
-import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
-import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryResponse;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
-import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
@@ -32,23 +51,6 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -61,24 +63,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @Mock
     CodeartifactClient codeartifactClient;
-
-    private final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
-        .name(REPO_NAME)
-        .administratorAccount(ADMIN_ACCOUNT)
-        .arn(REPO_ARN)
-        .description(DESCRIPTION)
-        .domainOwner(DOMAIN_OWNER)
-        .domainName(DOMAIN_NAME)
-        .build();
-
-    private final ResourceModel desiredOutputModel = ResourceModel.builder()
-        .domainName(DOMAIN_NAME)
-        .domainOwner(DOMAIN_OWNER)
-        .repositoryName(REPO_NAME)
-        .arn(REPO_ARN)
-        .description(DESCRIPTION)
-        .administratorAccount(ADMIN_ACCOUNT)
-        .build();
 
     @BeforeEach
     public void setup() {
@@ -104,6 +88,248 @@ public class CreateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+    }
+
+    @Test
+    public void handleRequest_withUpstreams() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .upstreams(UPSTREAMS)
+            .description(DESCRIPTION)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+    }
+
+    @Test
+    public void handleRequest_withRepoPolicy() throws JsonProcessingException {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
+            .description(DESCRIPTION)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+
+        ArgumentCaptor<PutRepositoryPermissionsPolicyRequest> putRepoPermissionsPolicyRequestArgumentCaptor
+            = ArgumentCaptor.forClass(PutRepositoryPermissionsPolicyRequest.class);
+
+        verify(codeartifactClient).putRepositoryPermissionsPolicy(putRepoPermissionsPolicyRequestArgumentCaptor.capture());
+        PutRepositoryPermissionsPolicyRequest capturedRequest = putRepoPermissionsPolicyRequestArgumentCaptor.getValue();
+
+        assertThat(capturedRequest.domain()).isEqualTo(DOMAIN_NAME);
+        assertThat(capturedRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
+        assertThat(capturedRequest.policyDocument()).isEqualTo(MAPPER.writeValueAsString(TEST_POLICY_DOC_0));
+
+        verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+    }
+
+    @Test
+    public void handleRequest_withExternalConnections_happycase() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .externalConnections(Collections.singletonList(NPM_EC))
+            .description(DESCRIPTION)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .upstreams(Collections.emptyList())
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+    }
+
+    @Test
+    public void handleRequest_withExternalConnections_moreThanOneExternalConnection() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .externalConnections(Arrays.asList("public:npmjs", "public:pypi"))
+            .description(DESCRIPTION)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -125,15 +351,12 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
-        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
-        assertThat(response.getResourceModels()).isNull();
-        assertThat(response.getMessage()).isNull();
-        assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
+
 
     @Test
     public void handleRequest_conflictException() {
@@ -152,13 +375,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnAlreadyExistsException e) {
-            //Expected
-
-        }
+        assertThrows(CfnAlreadyExistsException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
@@ -182,13 +399,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnServiceLimitExceededException e) {
-            //Expected
-
-        }
+        assertThrows(CfnServiceLimitExceededException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
@@ -211,13 +422,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnInvalidRequestException e) {
-            //Expected
-
-        }
+        assertThrows(CfnInvalidRequestException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
@@ -241,13 +446,30 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnServiceInternalErrorException e) {
-            //Expected
+        assertThrows(CfnServiceInternalErrorException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
-        }
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+    }
+
+    @Test
+    public void handleRequest_accessDeniedException() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .description(DESCRIPTION)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenThrow(AccessDeniedException.class);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        assertThrows(CfnAccessDeniedException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
@@ -270,13 +492,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnNotFoundException e) {
-            //Expected
-
-        }
+        assertThrows(CfnNotFoundException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
@@ -299,13 +515,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .desiredResourceState(model)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnGeneralServiceException e) {
-            //Expected
-
-        }
+        assertThrows(CfnGeneralServiceException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));

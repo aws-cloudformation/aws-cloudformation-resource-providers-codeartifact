@@ -37,6 +37,26 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 2048
+    },
+    "ExternalConnections": {
+      "description": "A list of external connections associated with the repository.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Upstreams": {
+      "description": "A list of upstream repositories associated with the repository.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "PermissionsPolicyDocument": {
+      "description": "The access control resource policy on the provided repository.",
+      "type": "object",
+      "minLength": 2,
+      "maxLength": 5120
     }
   },
   "additionalProperties": false,
@@ -46,11 +66,11 @@
   ],
   "createOnlyProperties": [
     "/properties/RepositoryName",
-    "/properties/Description"
+    "/properties/DomainName",
+    "/properties/DomainOwner"
   ],
   "readOnlyProperties": [
     "/properties/Arn",
-    "/properties/DomainOwner",
     "/properties/AdministratorAccount"
   ],
   "primaryIdentifier": [
@@ -61,7 +81,7 @@
       "permissions": [
         "codeartifact:CreateRepository",
         "codeartifact:DescribeRepository",
-        "codeartifact:PutRepositoryPermissionPolicy",
+        "codeartifact:PutRepositoryPermissionsPolicy",
         "codeartifact:AssociateExternalConnection"
       ]
     },

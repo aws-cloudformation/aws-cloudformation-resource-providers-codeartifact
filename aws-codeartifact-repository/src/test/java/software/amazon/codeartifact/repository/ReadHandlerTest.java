@@ -1,6 +1,7 @@
 package software.amazon.codeartifact.repository;
 
 import java.time.Duration;
+import java.util.Collections;
 import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
@@ -75,6 +76,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
         .arn(REPO_ARN)
+        .upstreams(Collections.emptyList())
         .repositoryName(REPO_NAME)
         .description(DESCRIPTION)
         .administratorAccount(ADMIN_ACCOUNT)
