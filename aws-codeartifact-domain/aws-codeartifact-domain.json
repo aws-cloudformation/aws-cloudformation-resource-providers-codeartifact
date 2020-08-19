@@ -6,7 +6,7 @@
     "DomainName": {
       "description": "The name of the domain.",
       "type": "string",
-      "pattern": "[a-z][a-z0-9\\-]{0,48}[a-z0-9]",
+      "pattern": "^([a-z][a-z0-9\\-]{0,48}[a-z0-9])$",
       "minLength": 2,
       "maxLength": 50
     },
@@ -39,12 +39,9 @@
       ],
       "type": "string"
     },
-    "PolicyDocument": {
+    "PermissionsPolicyDocument": {
       "description": "The access control resource policy on the provided domain.",
-      "type": [
-        "object",
-        "string"
-      ],
+      "type": "object",
       "minLength": 2,
       "maxLength": 5120
     },
@@ -56,6 +53,9 @@
     }
   },
   "additionalProperties": false,
+  "required": [
+    "DomainName"
+  ],
   "createOnlyProperties": [
     "/properties/DomainName",
     "/properties/EncryptionKey"
@@ -64,7 +64,8 @@
     "/properties/Arn",
     "/properties/CreatedTime",
     "/properties/RepositoryCount",
-    "/properties/AssetSizeBytes"
+    "/properties/AssetSizeBytes",
+    "/properties/DomainOwner"
   ],
   "primaryIdentifier": [
     "/properties/Arn"

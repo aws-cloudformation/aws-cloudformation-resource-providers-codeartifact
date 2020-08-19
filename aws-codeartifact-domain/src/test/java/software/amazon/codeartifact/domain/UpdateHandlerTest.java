@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPo
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
+import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -25,7 +26,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.atLeastOnce;
@@ -77,24 +81,28 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
     @AfterEach
     public void tear_down() {
-        verify(codeartifactClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(codeartifactClient);
     }
 
     @Test
-    public void handleRequest_simpleSuccess() {
+    public void handleRequest_simpleSuccess() throws JsonProcessingException {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
-            .policyDocument(TEST_POLICY_DOC)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .build();
+
+        final ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
             .build();
 
         PutDomainPermissionsPolicyResponse putDomainPermissionsPolicyResponse = PutDomainPermissionsPolicyResponse.builder()
             .policy(
                 ResourcePolicy.builder()
-                    .document(TEST_POLICY_DOC)
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC))
                     .build()
             )
             .build();
@@ -109,6 +117,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(previousModel)
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -122,14 +131,14 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
-        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
         verify(codeartifactClient).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
 
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
 
     @Test
-    public void handleRequest_deleteDomainPermissionPolicy() {
+    public void handleRequest_deleteDomainPermissionPolicy() throws JsonProcessingException {
         final UpdateHandler handler = new UpdateHandler();
 
         final ResourceModel model = ResourceModel.builder()
@@ -137,10 +146,16 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .build();
 
+        final ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .build();
+
         DeleteDomainPermissionsPolicyResponse deleteDomainPermissionsPolicyResponse = DeleteDomainPermissionsPolicyResponse.builder()
             .policy(
                 ResourcePolicy.builder()
-                    .document(TEST_POLICY_DOC)
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC))
                     .build()
             )
             .build();
@@ -154,10 +169,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
-        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
-
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .previousResourceState(previousModel)
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -170,8 +184,30 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
-        verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
         verify(codeartifactClient).deleteDomainPermissionsPolicy(any(DeleteDomainPermissionsPolicyRequest.class));
 
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+    }
+
+    @Test
+    public void handleRequest_throwsCfnNotUpdatableException() {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel previousModel = ResourceModel.builder()
+            .domainName("different-domain-name")
+            .domainOwner(DOMAIN_OWNER)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        assertThrows(CfnNotUpdatableException.class,() -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
     }
 }

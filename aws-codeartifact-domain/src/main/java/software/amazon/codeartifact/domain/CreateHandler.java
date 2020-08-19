@@ -5,6 +5,8 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -21,6 +23,13 @@ public class CreateHandler extends BaseHandlerStd {
         final CallbackContext callbackContext,
         final ProxyClient<CodeartifactClient> proxyClient,
         final Logger logger) {
+
+        ResourceModel model = request.getDesiredResourceState();
+
+        // Make sure the user isn't trying to assign values to readOnly properties
+        if (hasReadOnlyProperties(model)) {
+            throw new CfnInvalidRequestException("Attempting to set a ReadOnly Property.");
+        }
 
         this.logger = logger;
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
@@ -57,6 +66,11 @@ public class CreateHandler extends BaseHandlerStd {
 
         logger.log(String.format("%s successfully created.", ResourceModel.TYPE_NAME));
         return awsResponse;
+    }
+
+    private boolean hasReadOnlyProperties(final ResourceModel model) {
+        return model.getAssetSizeBytes() != null || model.getRepositoryCount() != null
+            || model.getCreatedTime() != null || model.getDomainOwner() != null;
     }
 
     private boolean isStabilized(

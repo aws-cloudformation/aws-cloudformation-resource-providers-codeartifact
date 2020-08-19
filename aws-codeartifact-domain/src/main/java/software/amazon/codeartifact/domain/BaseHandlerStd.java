@@ -1,9 +1,10 @@
 package software.amazon.codeartifact.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
-import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -11,12 +12,9 @@ import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import software.amazon.cloudformation.proxy.delay.Constant;
-import org.apache.http.HttpStatus;
-import java.time.Duration;
 
 public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
-
+  public static final ObjectMapper MAPPER = new ObjectMapper();
   @Override
   public final ProgressEvent<ResourceModel, CallbackContext> handleRequest(
     final AmazonWebServicesClientProxy proxy,
@@ -47,40 +45,54 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
       final ProxyClient<CodeartifactClient> proxyClient,
       final Logger logger
   ) {
-    final ResourceModel desiredModel = progress.getResourceModel();
-    if (desiredModel.getPolicyDocument() == null) {
-      return ProgressEvent.progress(desiredModel, callbackContext);
-    }
-    return proxy.initiate("AWS-CodeArtifact-Domain::Update::PutDomainPermissionsPolicy", proxyClient,
-        progress.getResourceModel(), progress.getCallbackContext())
-        .translateToServiceRequest(Translator::translatePutDomainPolicyRequest)
-        .makeServiceCall((awsRequest, client) -> {
-          PutDomainPermissionsPolicyResponse awsResponse = null;
-          try {
-            awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::putDomainPermissionsPolicy);
-            logger.log("Domain permission policy successfully added.");
-          } catch (final AwsServiceException e) {
-            String domainName = desiredModel.getDomainName();
-            Translator.throwCfnException(e, Constants.PUT_DOMAIN_POLICY, domainName);
-          }
-          return awsResponse;
-        })
-        .stabilize((awsRequest, awsResponse, client, model, context) -> domainPolicyIsStabilized(model, client, request))
-        .progress();
+
+      final ResourceModel desiredModel = progress.getResourceModel();
+      final ResourceModel previousModel = request.getPreviousResourceState();
+
+      if (desiredModel.getPermissionsPolicyDocument() == null || policyIsUnchanged(desiredModel, previousModel)) {
+          return ProgressEvent.progress(desiredModel, callbackContext);
+      }
+      return proxy.initiate("AWS-CodeArtifact-Domain::Update::PutDomainPermissionsPolicy", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
+          .translateToServiceRequest(Translator::translatePutDomainPolicyRequest)
+          .makeServiceCall((awsRequest, client) -> {
+              PutDomainPermissionsPolicyResponse awsResponse = null;
+              try {
+                  awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::putDomainPermissionsPolicy);
+                  logger.log("Domain permission policy successfully added.");
+              } catch (final AwsServiceException e) {
+                  String domainName = desiredModel.getDomainName();
+                  Translator.throwCfnException(e, Constants.PUT_DOMAIN_POLICY, domainName);
+              }
+              return awsResponse;
+          })
+          .progress();
   }
 
-    private boolean domainPolicyIsStabilized(
+    boolean policyIsUnchanged(final ResourceModel desiredModel, final ResourceModel previousModel) {
+        if (previousModel == null) {
+            return false;
+        }
+
+        if (desiredModel.getPermissionsPolicyDocument() == null || previousModel.getPermissionsPolicyDocument() == null) {
+            return false;
+        }
+        JsonNode desiredPolicy = MAPPER.valueToTree(desiredModel.getPermissionsPolicyDocument());
+        JsonNode currentPolicy = MAPPER.valueToTree(previousModel.getPermissionsPolicyDocument());
+        return desiredPolicy.equals(currentPolicy);
+    }
+
+    protected boolean doesDomainExist(
         final ResourceModel model,
         final ProxyClient<CodeartifactClient> proxyClient,
         ResourceHandlerRequest<ResourceModel> request
     ) {
-      try {
-          proxyClient.injectCredentialsAndInvokeV2(
-              Translator.translateToGetDomainPermissionPolicy(model, request), proxyClient.client()::getDomainPermissionsPolicy);
-          return true;
-      } catch (ResourceNotFoundException e) {
-          return false;
-      }
+        try {
+            proxyClient.injectCredentialsAndInvokeV2(
+                Translator.translateToReadRequest(model, request), proxyClient.client()::describeDomain);
+            return true;
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
     }
 
 }

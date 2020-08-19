@@ -38,13 +38,14 @@ import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -98,7 +99,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .build();
 
         CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
@@ -134,13 +134,12 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_withDomainPolicy() {
+    public void handleRequest_withDomainPolicy() throws JsonProcessingException {
         final CreateHandler handler = new CreateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
-            .policyDocument(TEST_POLICY_DOC)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
             .build();
 
         CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
@@ -182,10 +181,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         PutDomainPermissionsPolicyRequest capturedRequest = putDomainPermissionsPolicyRequestArgumentCaptor.getValue();
 
         assertThat(capturedRequest.domain()).isEqualTo(DOMAIN_NAME);
-        assertThat(capturedRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
-        assertThat(capturedRequest.policyDocument()).isEqualTo(TEST_POLICY_DOC);
-
-        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
+        assertThat(capturedRequest.policyDocument()).isEqualTo(MAPPER.writeValueAsString(TEST_POLICY_DOC));
     }
 
 
