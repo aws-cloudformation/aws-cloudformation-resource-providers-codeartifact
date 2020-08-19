@@ -8,6 +8,8 @@ public class Constants {
     public static final String PUT_REPOSITORY_POLICY = "codeartifact:PutRepositoryPermissionsPolicy";
     public static final String DELETE_REPOSITORY_POLICY = "codeartifact:DeleteRepositoryPermissionsPolicy";
     public static final String ASSOCIATE_EXTERNAL_CONNECTION = "codeartifact:AssociateExternalConnection";
+    public static final String LIST_REPOSITORIES = "codeartifact:ListRepositories";
     public static final String DISASSOCIATE_EXTERNAL_CONNECTION = "codeartifact:DisassociateExternalConnection";
+    public static final int MAX_ITEMS = 1000;
 
 }
