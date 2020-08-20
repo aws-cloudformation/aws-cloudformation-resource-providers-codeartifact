@@ -1,5 +1,5 @@
 {
-    "typeName": "AWS::CodeArtifact::Domain",
+    "typeName": "AWSdevToolsBeta::CodeArtifact::Domain",
     "language": "java",
     "runtime": "java8",
     "entrypoint": "software.amazon.codeartifact.domain.HandlerWrapper::handleRequest",

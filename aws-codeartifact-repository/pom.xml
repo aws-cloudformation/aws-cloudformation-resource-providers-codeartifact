@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.example</groupId>
-  <artifactId>aws-codeartifact-repository-handler</artifactId>
-  <name>aws-codeartifact-repository-handler</name>
+  <artifactId>awsdevtoolsbeta-codeartifact-repository-handler</artifactId>
+  <name>awsdevtoolsbeta-codeartifact-repository-handler</name>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -220,7 +220,7 @@
       <resource>
         <directory>${project.basedir}</directory>
         <includes>
-          <include>aws-codeartifact-repository.json</include>
+          <include>awsdevtoolsbeta-codeartifact-repository.json</include>
         </includes>
       </resource>
     </resources>

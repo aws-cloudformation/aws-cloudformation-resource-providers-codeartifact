@@ -1,0 +1,102 @@
+{
+    "typeName": "AWSdevTools::CodeArtifact::Domain",
+    "description": "The resource schema to create a CodeArtifact domain.",
+    "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-codeartifact",
+    "properties": {
+      "DomainName": {
+        "description": "The name of the domain.",
+        "type": "string",
+        "pattern": "[a-z][a-z0-9\\-]{0,48}[a-z0-9]",
+        "minLength": 2,
+        "maxLength": 50
+      },
+      "DomainOwner": {
+        "description": "The 12-digit account ID of the AWS account that owns the domain.",
+        "pattern": "[0-9]{12}",
+        "type": "string"
+      },
+      "EncryptionKey": {
+        "description": "The ARN of an AWS Key Management Service (AWS KMS) key associated with a domain.",
+        "type": "string"
+      },
+      "CreatedTime": {
+        "description": "Timestamp of when the domain was created.",
+        "type": "string"
+      },
+      "RepositoryCount": {
+        "description": "The number of repositories in the domain.",
+        "type": "integer"
+      },
+      "AssetSizeBytes": {
+        "description": "The total size of all assets in the domain.",
+        "type": "integer"
+      },
+      "Status": {
+        "description": "The current status of a domain.",
+        "enum": [
+          "Active",
+          "Deleted"
+        ],
+        "type": "string"
+      },
+      "PermissionsPolicyDocument": {
+        "description": "The access control resource policy on the provided domain.",
+        "type": "object",
+        "minLength": 2,
+        "maxLength": 5120
+      },
+      "Arn": {
+        "description": "The ARN of the domain.",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2048
+      }
+    },
+    "additionalProperties": false,
+    "createOnlyProperties": [
+      "/properties/DomainName",
+      "/properties/EncryptionKey"
+    ],
+    "readOnlyProperties": [
+      "/properties/Arn",
+      "/properties/CreatedTime",
+      "/properties/RepositoryCount",
+      "/properties/AssetSizeBytes"
+    ],
+    "primaryIdentifier": [
+      "/properties/Arn"
+    ],
+    "handlers": {
+      "create": {
+        "permissions": [
+          "codeartifact:CreateDomain",
+          "codeartifact:PutDomainPermissionsPolicy",
+          "codeartifact:GetDomainPermissionsPolicy"
+        ]
+      },
+      "read": {
+        "permissions": [
+          "codeartifact:DescribeDomain"
+        ]
+      },
+      "update": {
+        "permissions": [
+          "codeartifact:PutDomainPermissionsPolicy",
+          "codeartifact:DeleteDomainPermissionsPolicy",
+          "codeartifact:GetDomainPermissionsPolicy"
+        ]
+      },
+      "delete": {
+        "permissions": [
+          "codeartifact:DeleteDomain",
+          "codeartifact:DescribeDomain"
+        ]
+      },
+      "list": {
+        "permissions": [
+          "codeartifact:ListDomains"
+        ]
+      }
+    }
+  }
+  

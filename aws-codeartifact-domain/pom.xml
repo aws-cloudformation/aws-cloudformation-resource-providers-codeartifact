@@ -6,8 +6,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>software.amazon.codeartifact.domain</groupId>
-    <artifactId>aws-codeartifact-domain-handler</artifactId>
-    <name>aws-codeartifact-domain-handler</name>
+    <artifactId>awsdevtoolsbeta-codeartifact-domain-handler</artifactId>
+    <name>awsdevtoolsbeta-codeartifact-domain-handler</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -221,7 +221,7 @@
             <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>aws-codeartifact-domain.json</include>
+                    <include>awsdevtoolsbeta-codeartifact-domain.json</include>
                 </includes>
             </resource>
         </resources>
