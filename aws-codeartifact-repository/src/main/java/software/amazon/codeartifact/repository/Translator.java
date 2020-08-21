@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConn
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
+import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest.Builder;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
@@ -43,6 +45,7 @@ import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
+import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 /**
  * This class is a centralized placeholder for
@@ -76,6 +79,7 @@ public class Translator {
    */
   static List<UpstreamRepository> translateToUpstreamList(final ResourceModel model) {
     if (model.getUpstreams() == null) {
+      // this will remove upstreams
       return Collections.emptyList();
     }
 
@@ -237,26 +241,29 @@ public class Translator {
         .build();
   }
 
-
-  public static Set<String> translateExternalConnectionFromRepoDescription(RepositoryDescription repository) {
-    return streamOfOrEmpty(repository.externalConnections())
-        .map(RepositoryExternalConnectionInfo::externalConnectionName)
-        .collect(Collectors.toSet());
-  }
-
   /**
    * Request to update Repository
-   * @param model resource model
+   * @param desiredModel desired resource model
+   * @param prevModel previous resource model
    * @return awsRequest the aws service request to modify a resource
    */
-  static UpdateRepositoryRequest translateToUpdateRepository(final ResourceModel model) {
-    return UpdateRepositoryRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
-        .repository(model.getRepositoryName())
-        .description(model.getDescription())
-        .upstreams(translateToUpstreamList(model))
-        .build();
+  static UpdateRepositoryRequest translateToUpdateRepository(
+      final ResourceModel desiredModel,
+      final ResourceModel prevModel
+  ) {
+    UpdateRepositoryRequest.Builder builder = UpdateRepositoryRequest.builder()
+        .domain(desiredModel.getDomainName())
+        .domainOwner(desiredModel.getDomainOwner())
+        .repository(desiredModel.getRepositoryName())
+        .description(desiredModel.getDescription());
+
+    if (!Objects.equals(prevModel.getUpstreams(), desiredModel.getUpstreams())) {
+      // There is either upstreams to remove or upstreams to delete. This is here because adding an external connection
+      // and trying to call .upstreams(emptyList) will cause a ValidationException with a repository with external
+      // connections, so we skip the call if there is nothing to update.
+      builder.upstreams(translateToUpstreamList(desiredModel));
+    }
+    return builder.build();
   }
 
   /**
