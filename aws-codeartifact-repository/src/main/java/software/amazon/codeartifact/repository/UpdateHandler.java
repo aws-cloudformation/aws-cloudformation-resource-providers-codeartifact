@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -36,7 +37,7 @@ public class UpdateHandler extends BaseHandlerStd {
         final ResourceModel prevModel = request.getPreviousResourceState();
 
         ProgressEvent<ResourceModel, CallbackContext> updateRepositoryConnectionsEvent;
-        if (willAddUpstreams(desiredModel, prevModel)) {
+        if (ComparisonUtils.willAddUpstreams(desiredModel, prevModel)) {
             // If adding upstreams, first remove externalConnections in updateExternalConnections(), then add upstreams
             // to avoid adding an upstream before removing an external connection
             updateRepositoryConnectionsEvent = ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
@@ -91,7 +92,8 @@ public class UpdateHandler extends BaseHandlerStd {
         Logger logger
     ) {
 
-        if (willNotUpdateUpstreams(desiredModel, previousModel) && willNotUpdateDescription(desiredModel, previousModel)) {
+        if (ComparisonUtils.willNotUpdateUpstreams(desiredModel, previousModel) &&
+            ComparisonUtils.willNotUpdateDescription(desiredModel, previousModel)) {
             return ProgressEvent.progress(desiredModel, callbackContext);
         }
 
@@ -109,18 +111,6 @@ public class UpdateHandler extends BaseHandlerStd {
                 return awsResponse;
             })
             .progress();
-    }
-
-    private boolean willAddUpstreams(final ResourceModel desiredModel, final ResourceModel prevModel) {
-        return prevModel.getUpstreams() == null && desiredModel.getUpstreams() != null;
-    }
-
-    private boolean willNotUpdateUpstreams(final ResourceModel desiredModel, final ResourceModel prevModel) {
-        return Objects.equals(prevModel.getUpstreams(), desiredModel.getUpstreams());
-    }
-
-    private boolean willNotUpdateDescription(final ResourceModel desiredModel, final ResourceModel prevModel) {
-        return Objects.equals(prevModel.getDescription(), desiredModel.getDescription());
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> updateRepositoryPermissionsPolicy(
@@ -192,6 +182,8 @@ public class UpdateHandler extends BaseHandlerStd {
             try {
                 DisassociateExternalConnectionRequest disassociateExternalConnectionRequest = Translator.translateDisassociateExternalConnectionsRequest(model, ec);
                 proxyClient.injectCredentialsAndInvokeV2(disassociateExternalConnectionRequest, proxyClient.client()::disassociateExternalConnection);
+            } catch (final ResourceNotFoundException e) {
+                // External Connection has already been removed or doesn't exist
             } catch (final AwsServiceException e) {
                 String repositoryName = progress.getResourceModel().getRepositoryName();
                 Translator.throwCfnException(e, Constants.DISASSOCIATE_EXTERNAL_CONNECTION, repositoryName);
