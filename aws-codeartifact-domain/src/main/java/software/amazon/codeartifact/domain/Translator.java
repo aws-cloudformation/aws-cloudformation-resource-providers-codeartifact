@@ -66,16 +66,15 @@ public class Translator {
   /**
    * Request to read a resource
    * @param model resource model
-   * @param model resource handler request
+   * @param request resource handler request
    * @return awsRequest the aws service request to describe a resource
    */
   static DescribeDomainRequest translateToReadRequest(
       final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
   ) {
-    String accountId = request.getAwsAccountId();
     return DescribeDomainRequest.builder()
         .domain(model.getDomainName())
-        .domainOwner(accountId)
+        .domainOwner(model.getDomainOwner())
         .build();
   }
 
@@ -88,10 +87,9 @@ public class Translator {
   static GetDomainPermissionsPolicyRequest translateToGetDomainPermissionPolicy(
       final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
   ) {
-    String accountId = request.getAwsAccountId();
     return GetDomainPermissionsPolicyRequest.builder()
         .domain(model.getDomainName())
-        .domainOwner(accountId)
+        .domainOwner(model.getDomainOwner())
         .build();
   }
 
@@ -133,7 +131,7 @@ public class Translator {
   static PutDomainPermissionsPolicyRequest translatePutDomainPolicyRequest(final ResourceModel model) {
       try {
         return PutDomainPermissionsPolicyRequest.builder()
-            .policyDocument(translatePolicyInput(model.getPolicyDocument()))
+            .policyDocument(MAPPER.writeValueAsString(model.getPermissionsPolicyDocument()))
             .domainOwner(model.getDomainOwner())
             .domain(model.getDomainName())
             .build();
@@ -154,13 +152,6 @@ public class Translator {
         .build();
   }
 
-  static String translatePolicyInput(final Object policy) throws JsonProcessingException {
-    if (policy instanceof Map) {
-      return MAPPER.writeValueAsString(policy);
-    }
-    return (String) policy;
-  }
-
   /**
    * Request to list resources
    * @param nextToken token passed to the aws service list resources request
@@ -178,13 +169,24 @@ public class Translator {
    * @param awsResponse the aws service describe resource response
    * @return list of resource models
    */
-  static List<ResourceModel> translateFromListRequest(final ListDomainsResponse awsResponse) {
+  static List<ResourceModel> translateFromListRequest(
+      final ListDomainsResponse awsResponse, final ResourceHandlerRequest<ResourceModel> request
+  ) {
     return streamOfOrEmpty(awsResponse.domains())
         .map(domain -> ResourceModel.builder()
+            .arn(buildArn(request, domain.owner(), domain.name()))
             // TODO change domainName to arn when CodeArtifactClient populates arn in the ListDomainsResponse
-            .domainName(domain.name())
             .build())
         .collect(Collectors.toList());
+  }
+
+  // TODO change domainName to arn when CodeArtifactClient populates arn in the ListDomainsResponse
+  private static String buildArn(
+      ResourceHandlerRequest<ResourceModel> request, String domainOwner, String domainName
+  ) {
+    final String partition = request.getAwsPartition();
+    final String region = request.getRegion();
+    return String.format("arn:%s:codeartifact:%s:%s:domain/%s", partition, region, domainOwner, domainName);
   }
 
   private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {

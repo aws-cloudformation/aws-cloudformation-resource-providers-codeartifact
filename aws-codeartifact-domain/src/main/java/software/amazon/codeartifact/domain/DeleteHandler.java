@@ -2,11 +2,10 @@ package software.amazon.codeartifact.domain;
 
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
-import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.awssdk.services.codeartifact.model.ConflictException;
+import software.amazon.cloudformation.exceptions.CfnNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -24,44 +23,43 @@ public class DeleteHandler extends BaseHandlerStd {
         final Logger logger) {
 
         this.logger = logger;
+        ResourceModel model = request.getDesiredResourceState();
+        // STEP 1.0 [initialize a proxy context]
+        ProgressEvent<ResourceModel, CallbackContext> deleteProgressEvent = proxy
+            .initiate("AWS-CodeArtifact-Domain::Delete", proxyClient, model, callbackContext)
+            // STEP 1.1 [construct a body of a request]
+            .translateToServiceRequest(Translator::translateToDeleteRequest)
+            // STEP 1.2 [make an api call]
+            .makeServiceCall((awsRequest, client) -> {
 
-        return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
+                // if domain does not exist, deleteDomain does not throw an exception, so we must do this
+                // to be under the ResourceHandler Contract
+                if (!doesDomainExist(model, proxyClient, request)) {
+                    throw new CfnNotFoundException(model.getDomainName(), ResourceModel.TYPE_NAME);
+                }
 
-            // STEP 1.0 [delete/stabilize progress chain - required for resource deletion]
-            .then(progress ->
-                // STEP 1.0 [initialize a proxy context]
-                proxy.initiate("AWS-CodeArtifact-Domain::Delete", proxyClient, progress.getResourceModel(),
-                    progress.getCallbackContext())
-                    // STEP 1.1 [construct a body of a request]
-                    .translateToServiceRequest(Translator::translateToDeleteRequest)
-                    // STEP 1.2 [make an api call]
-                    .makeServiceCall((awsRequest, client) -> {
-                        AwsResponse awsResponse = null;
-                        try {
-                            awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, proxyClient.client()::deleteDomain);
-                        } catch (final AwsServiceException e) {
-                            String domainName = progress.getResourceModel().getDomainName();
-                            Translator.throwCfnException(e, Constants.DELETE_DOMAIN, domainName);
-                        }
+                AwsResponse awsResponse = null;
+                try {
+                    awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, proxyClient.client()::deleteDomain);
+                } catch (final ConflictException e) {
+                    // this happens if the domain has repositories in the account
+                    throw new CfnResourceConflictException(ResourceModel.TYPE_NAME, model.getDomainName(), e.getMessage(), e);
+                } catch (final AwsServiceException e) {
+                    String domainName = model.getDomainName();
+                    Translator.throwCfnException(e, Constants.DELETE_DOMAIN, domainName);
+                }
 
-                        logger.log(String.format("%s successfully deleted.", ResourceModel.TYPE_NAME));
-                        return awsResponse;
-                    })
-                    // STEP 2.3 [Stabilize to check if the resource got deleted]
-                    .stabilize((deleteDomainRequest, deleteDomainResponse, proxyInvocation, model, context) -> isDeleted(model, proxyInvocation, request))
-                    .success());
+                logger.log(String.format("%s successfully deleted.", ResourceModel.TYPE_NAME));
+                return awsResponse;
+            })
+            // STEP 2.3 [Stabilize to check if the resource got deleted]
+            .stabilize((deleteDomainRequest, deleteDomainResponse, proxyInvocation, resourceModel, context) -> !doesDomainExist(model, proxyClient, request))
+            .success();
+
+
+        // according to the ResourceHandler contract we must not return the model in the response
+        deleteProgressEvent.setResourceModel(null);
+        return deleteProgressEvent;
     }
 
-    protected boolean isDeleted(final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient,
-        ResourceHandlerRequest<ResourceModel> request
-    ) {
-        try {
-            proxyClient.injectCredentialsAndInvokeV2(
-                Translator.translateToReadRequest(model, request), proxyClient.client()::describeDomain);
-            return false;
-        } catch (ResourceNotFoundException e) {
-            return true;
-        }
-    }
 }

@@ -3,11 +3,13 @@ package software.amazon.codeartifact.domain;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import java.util.Objects;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;
@@ -21,12 +23,32 @@ public class UpdateHandler extends BaseHandlerStd {
     ) {
 
         this.logger = logger;
+
+        String desiredDomainName = request.getDesiredResourceState().getDomainName();
+        String previousDomainName = request.getPreviousResourceState().getDomainName();
+        if (!Objects.equals(previousDomainName, desiredDomainName)) {
+            // cannot update domainName because it's CreateOnly
+            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredDomainName);
+        }
+
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
-            // If PolicyDocument is in the model putDomainPermissions policy
-            .then(progress -> putDomainPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
-            // Else then deleteDomainPermission policy
-            .then(progress -> deleteDomainPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient))
+            .then(progress -> updateDomainPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
+    }
+
+    protected ProgressEvent<ResourceModel, CallbackContext> updateDomainPermissionsPolicy(
+        final AmazonWebServicesClientProxy proxy,
+        final ProgressEvent<ResourceModel, CallbackContext> progress,
+        final CallbackContext callbackContext,
+        final ResourceHandlerRequest<ResourceModel> request,
+        final ProxyClient<CodeartifactClient> proxyClient,
+        final Logger logger
+    ) {
+        final ResourceModel desiredModel = request.getDesiredResourceState();
+        if (desiredModel.getPermissionsPolicyDocument() != null) {
+            return putDomainPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger);
+        }
+        return deleteDomainPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient);
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> deleteDomainPermissionsPolicy(
@@ -36,9 +58,10 @@ public class UpdateHandler extends BaseHandlerStd {
         ResourceHandlerRequest<ResourceModel> request,
         ProxyClient<CodeartifactClient> proxyClient
     ) {
-        final ResourceModel desiredModel = progress.getResourceModel();
+        final ResourceModel desiredModel = request.getDesiredResourceState();
+        final ResourceModel previousModel = request.getPreviousResourceState();
 
-        if (desiredModel.getPolicyDocument() != null) {
+        if (desiredModel.getPermissionsPolicyDocument() != null || previousModel.getPermissionsPolicyDocument() == null) {
             return ProgressEvent.progress(desiredModel, callbackContext);
         }
 
@@ -55,24 +78,7 @@ public class UpdateHandler extends BaseHandlerStd {
                 }
                 return awsRequest;
             })
-            .stabilize((awsRequest, awsResponse, client, model, context) -> domainPolicyIsDeleted(model, client, request))
             .progress();
     }
-
-    private boolean domainPolicyIsDeleted(
-        final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient,
-        ResourceHandlerRequest<ResourceModel> request
-    ) {
-        try {
-            proxyClient.injectCredentialsAndInvokeV2(
-                Translator.translateToGetDomainPermissionPolicy(model, request), proxyClient.client()::getDomainPermissionsPolicy);
-            return false;
-        } catch (ResourceNotFoundException e) {
-            return true;
-        }
-    }
-
-
 
 }

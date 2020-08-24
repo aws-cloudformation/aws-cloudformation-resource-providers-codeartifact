@@ -46,9 +46,10 @@ public class ListHandler extends BaseHandler<CallbackContext> {
         String nextToken = response.nextToken();
 
         return ProgressEvent.<ResourceModel, CallbackContext>builder()
-            .resourceModels(Translator.translateFromListRequest(response))
+            .resourceModels(Translator.translateFromListRequest(response, request))
             .nextToken(nextToken)
             .status(OperationStatus.SUCCESS)
             .build();
     }
+
 }
