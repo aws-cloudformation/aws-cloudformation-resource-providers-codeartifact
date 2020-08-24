@@ -27,6 +27,9 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesInDomainRequest;
+import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesRequest;
+import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
@@ -264,11 +267,11 @@ public class Translator {
    * @param nextToken token passed to the aws service list resources request
    * @return awsRequest the aws service request to list resources within aws account
    */
-  static AwsRequest translateToListRequest(final String nextToken) {
-    final AwsRequest awsRequest = null;
-    // TODO: construct a request
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L26-L31
-    return awsRequest;
+  static ListRepositoriesRequest translateToListRequest(final String nextToken) {
+    return ListRepositoriesRequest.builder()
+        .nextToken(nextToken)
+        .maxResults(Constants.MAX_ITEMS)
+        .build();
   }
 
   /**
@@ -276,12 +279,10 @@ public class Translator {
    * @param awsResponse the aws service describe resource response
    * @return list of resource models
    */
-  static List<ResourceModel> translateFromListRequest(final AwsResponse awsResponse) {
-    // e.g. https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-logs/blob/2077c92299aeb9a68ae8f4418b5e932b12a8b186/aws-logs-loggroup/src/main/java/com/aws/logs/loggroup/Translator.java#L75-L82
-    // TODO: construct models
-    return streamOfOrEmpty(Lists.newArrayList())
-        .map(resource -> ResourceModel.builder()
-            // include only primary identifier
+  static List<ResourceModel> translateFromListRequest(final ListRepositoriesResponse awsResponse) {
+    return streamOfOrEmpty(awsResponse.repositories())
+        .map(repo -> ResourceModel.builder()
+            .arn(repo.arn())
             .build())
         .collect(Collectors.toList());
   }
