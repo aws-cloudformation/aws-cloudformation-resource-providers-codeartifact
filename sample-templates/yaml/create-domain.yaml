@@ -1,0 +1,9 @@
+Parameters:
+  DomainName:
+    Type: String
+
+Resources:
+  CodeArtifactDomain:
+    Type: AWSdevTools::CodeArtifact::Domain
+    Properties:
+      DomainName: !Ref DomainName

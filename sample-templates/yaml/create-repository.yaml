@@ -1,0 +1,24 @@
+# This template does not create domain.
+
+Parameters:
+  DomainName:
+    Type: String
+  RepoName:
+    Type: String
+  Description:
+    Type: String
+
+Resources:
+  CodeArtifactRepository:
+    Type: AWSdevTools::CodeArtifact::Repository
+    Properties:
+      RepositoryName: !Ref RepoName
+      DomainName: !Ref DomainName
+      Description: !Ref Description
+      PermissionsPolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: 'codeartifact:*'
+            Effect: 'Allow'
+            Principal: '*'
+            Resource: '*'

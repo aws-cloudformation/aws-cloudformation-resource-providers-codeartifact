@@ -1,0 +1,18 @@
+# This template does not create domain.
+
+Parameters:
+  DomainName:
+    Type: String
+  RepoName:
+    Type: String
+  ExternalConnection:
+    Type: String
+
+Resources:
+  CodeArtifactRepository:
+    Type: AWSdevTools::CodeArtifact::Repository
+    Properties:
+      RepositoryName: !Ref RepoName
+      DomainName: !Ref DomainName
+      ExternalConnections:
+        - !Ref ExternalConnection

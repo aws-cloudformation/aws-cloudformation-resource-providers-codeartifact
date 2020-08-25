@@ -1,0 +1,30 @@
+{
+  "Parameters": {
+    "DomainName": {
+      "Type": "String"
+    },
+    "KMSArn": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "CodeArtifactDomain": {
+      "Type": "AWSdevTools::CodeArtifact::Domain",
+      "Properties": {
+        "DomainName": { "Ref" : "DomainName" },
+        "PermissionsPolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "codeartifact:*",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Resource": "*"
+            }
+          ]
+        },
+        "EncryptionKey": { "Ref" : "KMSArn" }
+      }
+    }
+  }
+}
