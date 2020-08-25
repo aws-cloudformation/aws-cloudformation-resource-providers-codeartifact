@@ -11,14 +11,6 @@ public class ComparisonUtils {
         return prevModel.getUpstreams() == null && desiredModel.getUpstreams() != null;
     }
 
-    public static boolean willNotUpdateUpstreams(final ResourceModel desiredModel, final ResourceModel prevModel) {
-        return upstreamsAreEqual(desiredModel, prevModel);
-    }
-
-    public static boolean willUpdateUpstreams(final ResourceModel desiredModel, final ResourceModel prevModel) {
-        return !upstreamsAreEqual(desiredModel, prevModel);
-    }
-
     public static boolean willNotUpdateDescription(final ResourceModel desiredModel, final ResourceModel prevModel) {
         return Objects.equals(prevModel.getDescription(), desiredModel.getDescription());
     }

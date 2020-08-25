@@ -92,7 +92,7 @@ public class UpdateHandler extends BaseHandlerStd {
         Logger logger
     ) {
 
-        if (ComparisonUtils.willNotUpdateUpstreams(desiredModel, previousModel) &&
+        if (ComparisonUtils.upstreamsAreEqual(desiredModel, previousModel) &&
             ComparisonUtils.willNotUpdateDescription(desiredModel, previousModel)) {
             return ProgressEvent.progress(desiredModel, callbackContext);
         }

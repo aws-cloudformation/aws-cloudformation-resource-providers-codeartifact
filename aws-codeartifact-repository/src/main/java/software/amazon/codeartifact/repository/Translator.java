@@ -257,7 +257,7 @@ public class Translator {
         .repository(desiredModel.getRepositoryName())
         .description(desiredModel.getDescription());
 
-    if (ComparisonUtils.willUpdateUpstreams(desiredModel, prevModel)) {
+    if (!ComparisonUtils.upstreamsAreEqual(desiredModel, prevModel)) {
       // There is either upstreams to remove or upstreams to delete. This is here because adding an external connection
       // and trying to call .upstreams(emptyList) will cause a ValidationException with a repository with external
       // connections, so we skip the call if there is nothing to update.
