@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissio
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
@@ -73,7 +74,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     @AfterEach
     public void tear_down() {
-        verify(codeartifactClient, atLeastOnce()).serviceName();
         verifyNoMoreInteractions(codeartifactClient);
     }
 
@@ -93,7 +93,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -129,6 +128,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -148,7 +148,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
+            .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -158,6 +158,10 @@ public class CreateHandlerTest extends AbstractTestBase {
             .administratorAccount(ADMIN_ACCOUNT)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
+            .upstreams(
+                UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_0).build(),
+                UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_1).build()
+            )
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
             .build();
@@ -185,6 +189,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -213,7 +218,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -252,6 +256,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(capturedRequest.policyDocument()).isEqualTo(MAPPER.writeValueAsString(TEST_POLICY_DOC_0));
 
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -280,7 +285,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -308,6 +312,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -355,6 +360,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
 
@@ -379,6 +385,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
 
@@ -403,6 +410,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -426,6 +434,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
 
@@ -450,6 +459,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -473,6 +483,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -496,6 +507,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
     @Test
@@ -518,6 +530,26 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThrows(CfnGeneralServiceException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+    }
+
+    @Test
+    public void handleRequest_invalidRequest_readOnlyProperties() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .administratorAccount("12345")
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        assertThrows(CfnInvalidRequestException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
+
         verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
     }
 }

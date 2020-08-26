@@ -6,6 +6,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -26,6 +27,11 @@ public class CreateHandler extends BaseHandlerStd {
         this.logger = logger;
         ResourceModel model = request.getDesiredResourceState();
         final Set<String> externalConnectionsToAdd = Translator.translateExternalConnectionFromDesiredResource(model);
+
+        // Make sure the user isn't trying to assign values to readOnly properties
+        if (hasReadOnlyProperties(model)) {
+            throw new CfnInvalidRequestException("Attempting to set a ReadOnly Property.");
+        }
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
             .then(progress -> createRepository(proxy, progress, proxyClient))
@@ -54,6 +60,10 @@ public class CreateHandler extends BaseHandlerStd {
             })
             .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client))
             .progress();
+    }
+
+    private boolean hasReadOnlyProperties(final ResourceModel model) {
+        return model.getArn() != null || model.getAdministratorAccount() != null;
     }
 
     private boolean isStabilized(

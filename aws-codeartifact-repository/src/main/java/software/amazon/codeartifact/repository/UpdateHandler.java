@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermis
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -35,6 +36,11 @@ public class UpdateHandler extends BaseHandlerStd {
 
         final ResourceModel desiredModel = request.getDesiredResourceState();
         final ResourceModel prevModel = request.getPreviousResourceState();
+
+        if (ComparisonUtils.willUpdateCreateOnlyProperty(desiredModel, prevModel)) {
+            // CreateOnly fields cannot be updated
+            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredModel.getArn());
+        }
 
         ProgressEvent<ResourceModel, CallbackContext> updateRepositoryConnectionsEvent;
         if (ComparisonUtils.willAddUpstreams(desiredModel, prevModel)) {

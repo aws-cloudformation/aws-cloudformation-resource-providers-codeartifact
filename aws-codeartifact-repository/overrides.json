@@ -1,0 +1,40 @@
+{
+  "CREATE": {
+    "/PermissionsPolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "codeartifact:*",
+          "Resource": "*"
+        }
+      ]
+    },
+    "/Upstreams": null,
+    "/ExternalConnections": [
+      "public:npmjs"
+    ],
+    "/DomainOwner": null,
+    "/DomainName": "domain",
+    "/Description": "test description"
+  },
+  "UPDATE": {
+    "/PermissionsPolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "codeartifact:*",
+          "Resource": "*"
+        }
+      ]
+    },
+    "/Upstreams": null,
+    "/ExternalConnections": null,
+    "/DomainOwner": null,
+    "/DomainName": "domain",
+    "/Description": "test description"
+  }
+}
