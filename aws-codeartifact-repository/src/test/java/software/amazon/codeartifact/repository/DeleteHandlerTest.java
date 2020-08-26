@@ -8,9 +8,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,14 +22,18 @@ import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryResponse;
+import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
+import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -46,6 +52,15 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
     @Mock
     CodeartifactClient codeartifactClient;
+
+    private final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+        .name(REPO_NAME)
+        .administratorAccount(ADMIN_ACCOUNT)
+        .arn(REPO_ARN)
+        .description(DESCRIPTION)
+        .domainOwner(DOMAIN_OWNER)
+        .domainName(DOMAIN_NAME)
+        .build();
 
     @BeforeEach
     public void setup() {
@@ -68,7 +83,16 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().deleteRepository(any(DeleteRepositoryRequest.class))).thenReturn(deleteDomainResponse);
 
-        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenThrow(ResourceNotFoundException.class);
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        // first, when checking if domain exists to be deleted
+        // second, to check if domain has been deleted
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class)))
+            .thenReturn(describeRepositoryResponse)
+            .thenThrow(ResourceNotFoundException.class);
+
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
@@ -79,12 +103,38 @@ public class DeleteHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
-        assertThat(response.getResourceModel()).isEqualTo(request.getDesiredResourceState());
+        assertThat(response.getResourceModel()).isNull();
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+    }
+
+    @Test
+    public void handleRequest_simpleSuccess_notFound() {
+        final DeleteHandler handler = new DeleteHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .build();
+
+        DeleteRepositoryResponse deleteDomainResponse = DeleteRepositoryResponse.builder()
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class)))
+            .thenThrow(ResourceNotFoundException.class);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        assertThrows(CfnNotFoundException.class, () ->handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
+
+
+        verify(codeartifactClient, never()).deleteRepository(any(DeleteRepositoryRequest.class));
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
     }
 
@@ -109,7 +159,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
-        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
     }
 
     @Test
@@ -133,7 +183,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
-        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
     }
 
     @Test
@@ -159,7 +209,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
-        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
     }
 
     @Test
@@ -183,7 +233,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
-        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
     }
 
     @Test
@@ -207,6 +257,6 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
-        verify(codeartifactClient, never()).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
     }
 }

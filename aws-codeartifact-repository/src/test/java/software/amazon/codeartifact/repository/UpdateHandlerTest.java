@@ -78,6 +78,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
 
@@ -86,7 +87,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -117,6 +117,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
 
@@ -125,7 +126,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -155,6 +155,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
             .domainOwner(DOMAIN_OWNER)
             .build();
 
@@ -163,7 +164,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -194,6 +194,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
             .upstreams(UPSTREAMS)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
@@ -247,6 +248,69 @@ public class UpdateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_simpleSuccess_removeUpstreams() {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .build();
+
+        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .previousResourceState(resourceModelWithUpstreams())
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        ArgumentCaptor<UpdateRepositoryRequest> updateRepositoryRequestArgumentCaptor =
+            ArgumentCaptor.forClass(UpdateRepositoryRequest.class);
+
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).updateRepository(updateRepositoryRequestArgumentCaptor.capture());
+
+        UpdateRepositoryRequest updateRepositoryRequest = updateRepositoryRequestArgumentCaptor.getValue();
+
+        assertThat(updateRepositoryRequest.upstreams()).isEmpty();
+        assertThat(updateRepositoryRequest.repository()).isEqualTo(REPO_NAME);
+        assertThat(updateRepositoryRequest.domain()).isEqualTo(DOMAIN_NAME);
+    }
+
+    @Test
     public void handleRequest_simpleSuccess_withNewExternalConnections() {
         final UpdateHandler handler = new UpdateHandler();
 
@@ -266,7 +330,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -324,7 +387,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
@@ -393,7 +455,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
@@ -449,7 +510,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
@@ -598,7 +658,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -643,7 +702,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
             .build();
@@ -708,7 +766,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
             .arn(REPO_ARN)
-            .upstreams(Collections.emptyList())
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -727,20 +784,18 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .build();
     }
 
-    ResourceModel resourceModelWithNpmExternalConnection() {
+    ResourceModel resourceModelWithUpstreams() {
         return ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
+            .upstreams(UPSTREAMS)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
-            .externalConnections(Collections.singletonList(NPM_EC))
-            .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
     }
     ResourceModel resourceModel(Map<String, Object> policyDoc) {
         ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
             .domainOwner(DOMAIN_OWNER)
             .build();
 
