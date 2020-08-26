@@ -12,7 +12,7 @@
   },
   "Resources": {
     "CodeArtifactRepository": {
-      "Type": "AWSdevTools::CodeArtifact::Repository",
+      "Type": "AWSdevToolsBeta::CodeArtifact::Repository",
       "Properties": {
         "RepositoryName": { "Ref" : "RepoName" },
         "DomainName": { "Ref" : "DomainName" },

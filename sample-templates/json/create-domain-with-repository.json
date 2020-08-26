@@ -9,14 +9,14 @@
   },
   "Resources": {
     "CodeArtifactDomain": {
-      "Type": "AWSdevTools::CodeArtifact::Domain",
+      "Type": "AWSdevToolsBeta::CodeArtifact::Domain",
       "Properties": {
         "DomainName": { "Ref": "DomainName" }
       }
     },
     "CodeArtifactRepository": {
       "DependsOn": "CodeArtifactDomain",
-      "Type": "AWSdevTools::CodeArtifact::Repository",
+      "Type": "AWSdevToolsBeta::CodeArtifact::Repository",
       "Properties": {
         "RepositoryName": { "Ref": "RepoName" },
         "DomainName": { "Ref": "DomainName" }

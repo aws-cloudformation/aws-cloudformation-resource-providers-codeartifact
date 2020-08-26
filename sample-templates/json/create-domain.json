@@ -6,7 +6,7 @@
   },
   "Resources": {
     "CodeArtifactDomain": {
-      "Type": "AWSdevTools::CodeArtifact::Domain",
+      "Type": "AWSdevToolsBeta::CodeArtifact::Domain",
       "Properties": {
         "DomainName": { "Ref" : "DomainName" }
       }
