@@ -60,6 +60,7 @@ public class Translator {
   static CreateDomainRequest translateToCreateRequest(final ResourceModel model) {
     return CreateDomainRequest.builder()
         .domain(model.getDomainName())
+        .encryptionKey(model.getEncryptionKey())
         .build();
   }
 
@@ -73,21 +74,6 @@ public class Translator {
       final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
   ) {
     return DescribeDomainRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
-        .build();
-  }
-
-  /**
-   * Request to read a resource
-   * @param model resource model
-   * @param model resource handler request
-   * @return awsRequest the aws service request to describe a resource
-   */
-  static GetDomainPermissionsPolicyRequest translateToGetDomainPermissionPolicy(
-      final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
-  ) {
-    return GetDomainPermissionsPolicyRequest.builder()
         .domain(model.getDomainName())
         .domainOwner(model.getDomainOwner())
         .build();

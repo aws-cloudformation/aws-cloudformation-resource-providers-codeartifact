@@ -134,6 +134,53 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_simpleSuccess_withEncrptionKey() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
+        CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        when(proxyClient.client().createDomain(any(CreateDomainRequest.class))).thenReturn(createDomainResponse);
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        ArgumentCaptor<CreateDomainRequest> createDomainRequestArgumentCaptor = ArgumentCaptor.forClass(CreateDomainRequest.class);
+
+        verify(codeartifactClient).createDomain(createDomainRequestArgumentCaptor.capture());
+        verify(codeartifactClient, times(2)).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+
+        CreateDomainRequest createDomainRequestValue = createDomainRequestArgumentCaptor.getValue();
+
+        assertThat(createDomainRequestValue.encryptionKey()).isEqualTo(ENCRYPTION_KEY_ARN);
+        assertThat(createDomainRequestValue.domain()).isEqualTo(DOMAIN_NAME);
+    }
+
+    @Test
     public void handleRequest_withDomainPolicy() throws JsonProcessingException {
         final CreateHandler handler = new CreateHandler();
 
