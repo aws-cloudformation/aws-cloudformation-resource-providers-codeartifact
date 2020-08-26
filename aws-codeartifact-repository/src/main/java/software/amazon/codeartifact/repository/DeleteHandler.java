@@ -33,8 +33,8 @@ public class DeleteHandler extends BaseHandlerStd {
                     .translateToServiceRequest(Translator::translateToDeleteRequest)
                     // STEP 2.2 [make an api call]
                     .makeServiceCall((awsRequest, client) -> {
-                        // if domain does not exist, deleteDomain does not throw an exception, so we must do this
-                        // to be under the ResourceHandler Contract
+                        // if repository does not exist, deleteRepository does not throw an exception, so we must do
+                        // this to be under the ResourceHandler Contract
                         if (!doesRepoExist(model, proxyClient)) {
                             throw new CfnNotFoundException(model.getDomainName(), ResourceModel.TYPE_NAME);
                         }

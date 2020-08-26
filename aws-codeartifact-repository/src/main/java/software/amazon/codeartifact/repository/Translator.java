@@ -49,6 +49,7 @@ import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.codeartifact.repository.ResourceModel.ResourceModelBuilder;
 import org.apache.commons.collections.CollectionUtils;
 
 /**
@@ -129,7 +130,7 @@ public class Translator {
    */
   static ResourceModel translateFromReadResponse(final DescribeRepositoryResponse describeRepositoryResponse) {
     RepositoryDescription repositoryDescription = describeRepositoryResponse.repository();
-    ResourceModel resourceModelBuilder = ResourceModel.builder()
+    ResourceModelBuilder resourceModelBuilder = ResourceModel.builder()
         // TODO add repositoryEndpoint
         .arn(repositoryDescription.arn())
         .description(repositoryDescription.description())
@@ -137,14 +138,13 @@ public class Translator {
         .domainName(repositoryDescription.domainName())
         .domainOwner(repositoryDescription.domainOwner())
         .description(repositoryDescription.description())
-        .repositoryName(repositoryDescription.name())
-        .build();
+        .repositoryName(repositoryDescription.name());
 
     if (!CollectionUtils.isEmpty(repositoryDescription.upstreams())) {
-      resourceModelBuilder.setUpstreams(translateToUpstreamsFromRepoDescription(describeRepositoryResponse.repository()));
+      resourceModelBuilder.upstreams(translateToUpstreamsFromRepoDescription(describeRepositoryResponse.repository()));
     }
 
-    return resourceModelBuilder;
+    return resourceModelBuilder.build();
   }
 
   /**
