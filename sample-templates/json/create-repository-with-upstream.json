@@ -14,18 +14,28 @@
     "CodeArtifactUpstreamRepository": {
       "Type": "AWSdevToolsBeta::CodeArtifact::Repository",
       "Properties": {
-        "RepositoryName": { "Ref" : "UpstreamRepoName" },
-        "DomainName": { "Ref" : "DomainName" }
+        "RepositoryName": {
+          "Ref": "UpstreamRepoName"
+        },
+        "DomainName": {
+          "Ref": "DomainName"
+        }
       }
     },
     "CodeArtifactRepository": {
       "DependsOn": "CodeArtifactUpstreamRepository",
       "Type": "AWSdevToolsBeta::CodeArtifact::Repository",
       "Properties": {
-        "RepositoryName": { "Ref" : "RepoName" },
-        "DomainName":{ "Ref" : "DomainName" },
+        "RepositoryName": {
+          "Ref": "RepoName"
+        },
+        "DomainName": {
+          "Ref": "DomainName"
+        },
         "Upstreams": [
-          { "Ref" : "UpstreamRepoName" }
+          {
+            "Ref": "UpstreamRepoName"
+          }
         ]
       }
     }

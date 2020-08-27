@@ -11,7 +11,9 @@
     "CodeArtifactDomain": {
       "Type": "AWSdevToolsBeta::CodeArtifact::Domain",
       "Properties": {
-        "DomainName": { "Ref" : "DomainName" },
+        "DomainName": {
+          "Ref": "DomainName"
+        },
         "PermissionsPolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -23,7 +25,9 @@
             }
           ]
         },
-        "EncryptionKey": { "Ref" : "KMSArn" }
+        "EncryptionKey": {
+          "Ref": "KMSArn"
+        }
       }
     }
   }

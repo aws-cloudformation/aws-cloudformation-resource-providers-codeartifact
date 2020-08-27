@@ -14,10 +14,16 @@
     "CodeArtifactRepository": {
       "Type": "AWSdevToolsBeta::CodeArtifact::Repository",
       "Properties": {
-        "RepositoryName": { "Ref" : "RepoName" },
-        "DomainName": { "Ref" : "DomainName" },
+        "RepositoryName": {
+          "Ref": "RepoName"
+        },
+        "DomainName": {
+          "Ref": "DomainName"
+        },
         "ExternalConnection": [
-          { "Ref" : "ExternalConnection" }
+          {
+            "Ref": "ExternalConnection"
+          }
         ]
       }
     }
