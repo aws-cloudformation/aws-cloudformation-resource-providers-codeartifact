@@ -19,26 +19,6 @@
       "description": "The ARN of an AWS Key Management Service (AWS KMS) key associated with a domain.",
       "type": "string"
     },
-    "CreatedTime": {
-      "description": "Timestamp of when the domain was created.",
-      "type": "string"
-    },
-    "RepositoryCount": {
-      "description": "The number of repositories in the domain.",
-      "type": "integer"
-    },
-    "AssetSizeBytes": {
-      "description": "The total size of all assets in the domain.",
-      "type": "integer"
-    },
-    "Status": {
-      "description": "The current status of a domain.",
-      "enum": [
-        "Active",
-        "Deleted"
-      ],
-      "type": "string"
-    },
     "PermissionsPolicyDocument": {
       "description": "The access control resource policy on the provided domain.",
       "type": "object",
@@ -61,10 +41,6 @@
     "/properties/EncryptionKey"
   ],
   "readOnlyProperties": [
-    "/properties/Arn",
-    "/properties/CreatedTime",
-    "/properties/RepositoryCount",
-    "/properties/AssetSizeBytes",
     "/properties/DomainOwner"
   ],
   "primaryIdentifier": [

@@ -1,17 +1,32 @@
 package software.amazon.codeartifact.domain;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
-import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
-import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -19,25 +34,6 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UpdateHandlerTest extends AbstractTestBase {
@@ -66,9 +62,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
         .arn(DOMAIN_ARN)
-        .repositoryCount(REPO_COUNT)
-        .createdTime(NOW.toString())
-        .assetSizeBytes(ASSET_SIZE)
         .encryptionKey(ENCRYPTION_KEY_ARN)
         .build();
 

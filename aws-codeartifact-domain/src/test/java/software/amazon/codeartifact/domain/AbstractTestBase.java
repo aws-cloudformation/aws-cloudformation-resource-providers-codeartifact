@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -16,16 +19,14 @@ import software.amazon.cloudformation.proxy.Credentials;
 import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.ProxyClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class AbstractTestBase {
   protected static final Credentials MOCK_CREDENTIALS;
   protected static final LoggerProxy logger;
-
   protected static final String DOMAIN_NAME = "test-domain-name";
-  protected static final String DOMAIN_ARN = "testDomainArn";
-  protected static final String ENCRYPTION_KEY_ARN = "testKeyArn";
+  protected static final String ENCRYPTION_KEY_ARN = "testKey/Arn";
   protected static final String DOMAIN_OWNER = "123456789";
+  protected static final String DOMAIN_ARN =
+      String.format("arn:aws:codeartifact:region:%s:domain/%s", DOMAIN_OWNER, DOMAIN_NAME);
   protected static final Map<String, Object> TEST_POLICY_DOC = Collections.singletonMap("key0", "value0");
   protected final Instant NOW = Instant.now();
   protected final int REPO_COUNT = 2;

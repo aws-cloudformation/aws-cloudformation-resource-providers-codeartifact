@@ -1,10 +1,9 @@
 package software.amazon.codeartifact.repository;
 
-import java.util.Arrays;
+import org.apache.commons.collections.CollectionUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,10 +11,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 
-import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.AssociateExternalConnectionRequest;
@@ -28,16 +24,13 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
-import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesInDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
-import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
-import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest.Builder;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
@@ -48,9 +41,7 @@ import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
-import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.codeartifact.repository.ResourceModel.ResourceModelBuilder;
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * This class is a centralized placeholder for
@@ -116,10 +107,23 @@ public class Translator {
    * @return awsRequest the aws service request to describe a resource
    */
   static DescribeRepositoryRequest translateToReadRequest(final ResourceModel model) {
+    String domainName = model.getDomainName();
+    String domainOwner = model.getDomainOwner();
+    String repositoryName = model.getRepositoryName();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
+        // this happens when Ref or GetAtt are called
+        RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
+
+        domainName = repositoryArn.domainName();
+        domainOwner = repositoryArn.owner();
+        repositoryName = repositoryArn.repoName();
+    }
+
     return DescribeRepositoryRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
-        .repository(model.getRepositoryName())
+        .domain(domainName)
+        .domainOwner(domainOwner)
+        .repository(repositoryName)
         .build();
   }
 

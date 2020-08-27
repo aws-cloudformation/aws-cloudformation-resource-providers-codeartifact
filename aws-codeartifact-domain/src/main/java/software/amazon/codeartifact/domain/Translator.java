@@ -1,23 +1,23 @@
 package software.amazon.codeartifact.domain;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import software.amazon.awssdk.awscore.AwsRequest;
-import software.amazon.awssdk.awscore.AwsResponse;
+
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
-import software.amazon.awssdk.services.codeartifact.model.CodeartifactException;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
-import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DeleteDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
-import software.amazon.awssdk.services.codeartifact.model.DomainSummary;
-import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsResponse;
@@ -30,17 +30,8 @@ import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
-import software.amazon.cloudformation.exceptions.TerminalException;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class is a centralized placeholder for
@@ -73,9 +64,19 @@ public class Translator {
   static DescribeDomainRequest translateToReadRequest(
       final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
   ) {
+    String domainName = model.getDomainName();
+    String domainOwner = model.getDomainOwner();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null) {
+      // This is the case GetAtt or Ref is called on the resource
+      DomainArn domainArn = ArnUtils.fromArn(model.getArn());
+
+      domainName = domainArn.domainName();
+      domainOwner = domainArn.owner();
+    }
     return DescribeDomainRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
+        .domain(domainName)
+        .domainOwner(domainOwner)
         .build();
   }
 
@@ -90,9 +91,6 @@ public class Translator {
         .domainName(domain.name())
         .encryptionKey(domain.encryptionKey())
         .domainOwner(domain.owner())
-        .assetSizeBytes(domain.assetSizeBytes().intValue())
-        .createdTime(domain.createdTime().toString())
-        .repositoryCount(domain.repositoryCount())
         .arn(domain.arn())
         .build();
   }
@@ -160,20 +158,15 @@ public class Translator {
   ) {
     return streamOfOrEmpty(awsResponse.domains())
         .map(domain -> ResourceModel.builder()
-            .arn(buildArn(request, domain.owner(), domain.name()))
+            .arn(
+                ArnUtils.domainArn(request.getAwsPartition(), request.getRegion(), domain.owner(), domain.name())
+                    .arn()
+            )
             // TODO change domainName to arn when CodeArtifactClient populates arn in the ListDomainsResponse
             .build())
         .collect(Collectors.toList());
   }
 
-  // TODO change domainName to arn when CodeArtifactClient populates arn in the ListDomainsResponse
-  private static String buildArn(
-      ResourceHandlerRequest<ResourceModel> request, String domainOwner, String domainName
-  ) {
-    final String partition = request.getAwsPartition();
-    final String region = request.getRegion();
-    return String.format("arn:%s:codeartifact:%s:%s:domain/%s", partition, region, domainOwner, domainName);
-  }
 
   private static <T> Stream<T> streamOfOrEmpty(final Collection<T> collection) {
     return Optional.ofNullable(collection)

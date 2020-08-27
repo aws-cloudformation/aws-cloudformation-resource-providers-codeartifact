@@ -9,6 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,7 +30,6 @@ import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
-import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
@@ -44,8 +45,6 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateHandlerTest extends AbstractTestBase {
@@ -74,9 +73,6 @@ public class CreateHandlerTest extends AbstractTestBase {
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
         .arn(DOMAIN_ARN)
-        .repositoryCount(REPO_COUNT)
-        .createdTime(NOW.toString())
-        .assetSizeBytes(ASSET_SIZE)
         .encryptionKey(ENCRYPTION_KEY_ARN)
         .build();
 
@@ -134,7 +130,7 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
-    public void handleRequest_simpleSuccess_withEncrptionKey() {
+    public void handleRequest_simpleSuccess_withEncryptionKey() {
         final CreateHandler handler = new CreateHandler();
 
         final ResourceModel model = ResourceModel.builder()

@@ -66,6 +66,8 @@ public class ListHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("us-west-2")
             .build();
 
         when(proxy.injectCredentialsAndInvokeV2(any(ListDomainsRequest.class), any())).thenReturn(
