@@ -70,7 +70,6 @@
     "/properties/DomainOwner"
   ],
   "readOnlyProperties": [
-    "/properties/Arn",
     "/properties/AdministratorAccount"
   ],
   "primaryIdentifier": [

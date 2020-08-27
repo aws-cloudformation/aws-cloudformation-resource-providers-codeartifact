@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
@@ -97,9 +98,6 @@ public class ReadHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .arn(DOMAIN_ARN)
-            .repositoryCount(REPO_COUNT)
-            .createdTime(NOW.toString())
-            .assetSizeBytes(ASSET_SIZE)
             .encryptionKey(ENCRYPTION_KEY_ARN)
             .build();
 
@@ -112,6 +110,62 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+    }
+
+
+    @Test
+    public void handleRequest_withOnlyArn() {
+        final ReadHandler handler = new ReadHandler();
+
+        ResourceModel model = ResourceModel.builder()
+            .arn(DOMAIN_ARN)
+            .build();
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(
+                DomainDescription.builder()
+                    .name(DOMAIN_NAME)
+                    .owner(DOMAIN_OWNER)
+                    .arn(DOMAIN_ARN)
+                    .repositoryCount(REPO_COUNT)
+                    .assetSizeBytes((long) ASSET_SIZE)
+                    .status(STATUS)
+                    .createdTime(NOW)
+                    .encryptionKey(ENCRYPTION_KEY_ARN)
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .logicalResourceIdentifier(DOMAIN_ARN)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .arn(DOMAIN_ARN)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        ArgumentCaptor<DescribeDomainRequest> argumentCaptor = ArgumentCaptor.forClass(DescribeDomainRequest.class);
+        verify(codeartifactClient).describeDomain(argumentCaptor.capture());
+
+        DescribeDomainRequest describeDomainRequest = argumentCaptor.getValue();
+        assertThat(describeDomainRequest.domain()).isEqualTo(DOMAIN_NAME);
+        assertThat(describeDomainRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
     }
 
     @Test
@@ -195,4 +249,5 @@ public class ReadHandlerTest extends AbstractTestBase {
         }
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
     }
+
 }

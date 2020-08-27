@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -31,7 +30,6 @@ import software.amazon.awssdk.services.codeartifact.model.InternalServerExceptio
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
-import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
@@ -58,10 +56,6 @@ public class DeleteHandlerTest extends AbstractTestBase {
         .name(DOMAIN_NAME)
         .owner(DOMAIN_OWNER)
         .arn(DOMAIN_ARN)
-        .repositoryCount(REPO_COUNT)
-        .assetSizeBytes((long) ASSET_SIZE)
-        .status(STATUS)
-        .createdTime(NOW)
         .encryptionKey(ENCRYPTION_KEY_ARN)
         .build();
 

@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
-import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
@@ -19,19 +23,15 @@ import software.amazon.cloudformation.proxy.LoggerProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
-import org.apache.commons.collections.map.HashedMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class AbstractTestBase {
   public static final ObjectMapper MAPPER = new ObjectMapper();
   protected static final String DOMAIN_NAME = "test-domain-name";
   protected static final String DOMAIN_OWNER = "12345";
   protected static final String ADMIN_ACCOUNT = "54321";
-  protected static final String REPO_ARN = "repoArn";
   protected static final String REPO_NAME = "test-repo-name";
+  protected static final String REPO_ARN = String.format("arn:aws:codeartifact:region:%s:repository/%s/%s",
+      DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
   protected static final Map<String, Object> TEST_POLICY_DOC_0 = Collections.singletonMap("key0", "value0");
   protected static final Map<String, Object> TEST_POLICY_DOC_1 = Collections.singletonMap("key1", "value1");
 
