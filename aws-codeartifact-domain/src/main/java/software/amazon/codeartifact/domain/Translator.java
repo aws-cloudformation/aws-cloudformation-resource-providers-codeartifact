@@ -69,9 +69,9 @@ public class Translator {
 
     if (model.getArn() != null && domainName == null && domainOwner == null) {
       // This is the case GetAtt or Ref is called on the resource
-      DomainArn domainArn = ArnUtils.fromArn(model.getArn());
+      Arn domainArn = ArnUtils.fromArn(model.getArn());
 
-      domainName = domainArn.domainName();
+      domainName = domainArn.shortId();
       domainOwner = domainArn.owner();
     }
     return DescribeDomainRequest.builder()

@@ -6,8 +6,9 @@ import com.google.common.base.MoreObjects;
 
 @Value.Immutable
 @Value.Style(allParameters = true, typeImmutable = "*", typeAbstract = "Abstract*")
-public abstract class AbstractDomainArn {
-    // TODO (jonjara) move this class to a common module
+public abstract class AbstractArn {
+    // TODO (jonjara) move this class to a common module and use it for both repositories and domains
+
     @Value.Default
     public String partition() {
         return "aws";
@@ -23,7 +24,9 @@ public abstract class AbstractDomainArn {
     // the type of the resource: "repository" or "domain"
     public abstract String type();
 
-    public abstract String domainName();
+    // the component from the Id of the resource without the type:
+    // "<domainName>/<resourceName>" or "<domainName>"
+    public abstract String shortId();
 
     public String arn() {
         StringBuilder sb = new StringBuilder().append("arn")
@@ -39,7 +42,7 @@ public abstract class AbstractDomainArn {
         return sb.append(":")
             .append(type())
             .append("/")
-            .append(domainName())
+            .append(shortId())
             .toString();
     }
 }
