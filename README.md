@@ -13,23 +13,29 @@ These resource providers can be tested by running the following commands through
 
 \> As these resource providers are not part of the public AWS namespace, standard CloudFormation pricing applies after the 1,000 Free Tier handler operations each month. For more information on CloudFormation pricing, see https://aws.amazon.com/cloudformation/pricing/.
 
+\> `us-east-1` is used as the region in the examples below, but any region supported by CodeArtifact can be used.
+
 ## Register a CodeArtifact domain resource provider with the AWS CLI
 
 ADD EXAMPLE CLI COMMAND for domain
-> aws cloudformation register-type \
->     --region us-east-1 \
->     --type RESOURCE \
->     --type-name "AWSdevToolsBeta::CodeArtifact::Domain" \
->     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip"
+```
+aws cloudformation register-type \
+     --region us-east-1 \
+     --type RESOURCE \
+     --type-name "AWSdevToolsBeta::CodeArtifact::Domain" \
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip"
+```
 
 ## Register a CodeArtifact repository resource provider with the AWS CLI
 
 ADD EXAMPLE CLI COMMAND for repository
-> aws cloudformation register-type \
->     --region us-east-1 \
->     --type RESOURCE \
->     --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
->     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" 
+```
+aws cloudformation register-type \
+     --region us-east-1 \
+     --type RESOURCE \
+     --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" 
+```
 
 ## Sample CloudFormation templates
 
