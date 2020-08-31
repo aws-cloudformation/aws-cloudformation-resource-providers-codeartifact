@@ -11,13 +11,13 @@ This is the CloudFormation Resource Provider Package for AWS CodeArtifact. These
 
 These resource providers can be tested by running the following commands through the AWS CLI for each of the Domain and Repository resources. The commands use a link to the Beta resource zip file stored in S3 to add these resources as private resource types to your AWS account.
 
-\> As these resource providers are not part of the public AWS namespace, standard CloudFormation pricing applies after the 1,000 Free Tier handler operations each month. For more information on CloudFormation pricing, see https://aws.amazon.com/cloudformation/pricing/.
+**As these resource providers are not part of the public AWS namespace, standard CloudFormation pricing applies after the 1,000 Free Tier handler operations each month. For more information on CloudFormation pricing, see https://aws.amazon.com/cloudformation/pricing/.**
 
 \> `us-east-1` is used as the region in the examples below, but any region supported by CodeArtifact can be used.
 
 ## Register a CodeArtifact domain resource provider with the AWS CLI
+Run this command to register a private resource for `AWSdevToolsBeta::CodeArtifact::Domain` in `us-east-1`
 
-ADD EXAMPLE CLI COMMAND for domain
 ```
 aws cloudformation register-type \
      --region us-east-1 \
@@ -27,8 +27,8 @@ aws cloudformation register-type \
 ```
 
 ## Register a CodeArtifact repository resource provider with the AWS CLI
+Run this command to register a private resource for `AWSdevToolsBeta::CodeArtifact::Repository` in `us-east-1`
 
-ADD EXAMPLE CLI COMMAND for repository
 ```
 aws cloudformation register-type \
      --region us-east-1 \
