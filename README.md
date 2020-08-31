@@ -34,7 +34,7 @@ aws cloudformation register-type \
      --region us-east-1 \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
-     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" 
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip"
 ```
 
 ## Sample CloudFormation templates
