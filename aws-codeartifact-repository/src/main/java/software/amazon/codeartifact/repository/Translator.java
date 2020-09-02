@@ -311,7 +311,7 @@ public class Translator {
 
   static void throwCfnException(final AwsServiceException exception, String operation, String repositoryName) {
     if (exception instanceof AccessDeniedException) {
-      throw new CfnAccessDeniedException(operation, exception);
+      throw new CfnAccessDeniedException(exception.getMessage(), exception);
     }
     if (exception instanceof ConflictException) {
       throw new CfnAlreadyExistsException(ResourceModel.TYPE_NAME, repositoryName);
