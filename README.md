@@ -45,7 +45,7 @@ aws cloudformation register-type \
 Run this command to register a private resource for `AWSdevToolsBeta::CodeArtifact::Repository` in `us-east-1`
 
 ```
-# First install the domain execution role
+# First install the repository execution role
 aws cloudformation create-stack \
   --template-url https://codeartifact-cfn-beta.s3-us-west-2.amazonaws.com/repository-resource-execution-role.yml \
   --stack-name repository-resource-execution-role \
