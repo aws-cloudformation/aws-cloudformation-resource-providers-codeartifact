@@ -19,22 +19,54 @@ These resource providers can be tested by running the following commands through
 Run this command to register a private resource for `AWSdevToolsBeta::CodeArtifact::Domain` in `us-east-1`
 
 ```
+# First install the domain execution role
+aws cloudformation create-stack \
+  --template-url https://codeartifact-cfn-beta.s3-us-west-2.amazonaws.com/domain-resource-execution-role.yml \
+  --stack-name domain-resource-execution-role \
+  --capabilities CAPABILITY_IAM
+
+aws cloudformation wait stack-create-complete \
+  --stack-name domain-resource-execution-role
+
+# Get the value of the ExecutionRoleArn Output
+export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
+  --stack-name domain-resource-execution-role \
+  | jq -r '.Stacks[] | select(.StackName == "domain-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
+
+# Register the domain resource
 aws cloudformation register-type \
      --region us-east-1 \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Domain" \
-     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip"
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip" \
+     --execution-role $STACK_ROLE_NAME
 ```
 
 ## Register a CodeArtifact repository resource provider with the AWS CLI
 Run this command to register a private resource for `AWSdevToolsBeta::CodeArtifact::Repository` in `us-east-1`
 
 ```
+# First install the repository execution role
+aws cloudformation create-stack \
+  --template-url https://codeartifact-cfn-beta.s3-us-west-2.amazonaws.com/repository-resource-execution-role.yml \
+  --stack-name repository-resource-execution-role \
+  --capabilities CAPABILITY_IAM
+
+aws cloudformation wait stack-create-complete \
+  --stack-name repository-resource-execution-role
+
+# Get the value of the ExecutionRoleArn Output
+export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
+  --stack-name repository-resource-execution-role \
+  | jq -r '.Stacks[] | select(.StackName == "repository-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
+
+# Register the repository resource
 aws cloudformation register-type \
      --region us-east-1 \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
-     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip"
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" \
+     --execution-role $STACK_ROLE_NAME
 ```
 
 ## Sample CloudFormation templates

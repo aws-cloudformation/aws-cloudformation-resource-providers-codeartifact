@@ -20,7 +20,7 @@
         "DomainName": {
           "Ref": "DomainName"
         },
-        "ExternalConnection": [
+        "ExternalConnections": [
           {
             "Ref": "ExternalConnection"
           }
