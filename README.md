@@ -29,8 +29,9 @@ aws cloudformation wait stack-create-complete \
   --stack-name domain-resource-execution-role
 
 # Get the value of the ExecutionRoleArn Output
-aws cloudformation describe-stacks \
-  --stack-name domain-resource-execution-role
+export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
+  --stack-name domain-resource-execution-role \
+  | jq -r '.Stacks[] | select(.StackName == "domain-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
 
 # Register the domain resource
 aws cloudformation register-type \
@@ -38,7 +39,7 @@ aws cloudformation register-type \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Domain" \
      --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip" \
-     --execution-role <role-arn-from-output>
+     --execution-role $STACK_ROLE_NAME
 ```
 
 ## Register a CodeArtifact repository resource provider with the AWS CLI
@@ -55,8 +56,9 @@ aws cloudformation wait stack-create-complete \
   --stack-name repository-resource-execution-role
 
 # Get the value of the ExecutionRoleArn Output
-aws cloudformation describe-stacks \
-  --stack-name repository-resource-execution-role
+export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
+  --stack-name repository-resource-execution-role \
+  | jq -r '.Stacks[] | select(.StackName == "repository-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
 
 # Register the repository resource
 aws cloudformation register-type \
@@ -64,7 +66,7 @@ aws cloudformation register-type \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
      --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" \
-     --execution-role <role-arn-from-output>
+     --execution-role $STACK_ROLE_NAME
 ```
 
 ## Sample CloudFormation templates
