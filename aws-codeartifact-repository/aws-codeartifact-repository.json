@@ -70,7 +70,9 @@
     "/properties/DomainOwner"
   ],
   "readOnlyProperties": [
-    "/properties/AdministratorAccount"
+    "/properties/RepositoryName",
+    "/properties/DomainName",
+    "/properties/DomainOwner"
   ],
   "primaryIdentifier": [
     "/properties/Arn"

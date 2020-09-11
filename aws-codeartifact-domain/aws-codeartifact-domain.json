@@ -41,7 +41,9 @@
     "/properties/EncryptionKey"
   ],
   "readOnlyProperties": [
-    "/properties/DomainOwner"
+    "/properties/DomainOwner",
+    "/properties/DomainName",
+    "/properties/EncryptionKey"
   ],
   "primaryIdentifier": [
     "/properties/Arn"
