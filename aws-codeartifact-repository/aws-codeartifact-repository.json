@@ -83,7 +83,8 @@
         "codeartifact:CreateRepository",
         "codeartifact:DescribeRepository",
         "codeartifact:PutRepositoryPermissionsPolicy",
-        "codeartifact:AssociateExternalConnection"
+        "codeartifact:AssociateExternalConnection",
+        "codeartifact:AssociateWithDownstreamRepository"
       ]
     },
     "read": {
@@ -97,7 +98,8 @@
         "codeartifact:DeleteRepositoryPermissionsPolicy",
         "codeartifact:AssociateExternalConnection",
         "codeartifact:DisassociateExternalConnection",
-        "codeartifact:UpdateRepository"
+        "codeartifact:UpdateRepository",
+        "codeartifact:AssociateWithDownstreamRepository"
       ]
     },
     "delete": {

@@ -177,7 +177,7 @@ public class Translator {
 
   static void throwCfnException(final AwsServiceException exception, String operation, String domainName) {
     if (exception instanceof AccessDeniedException)
-      throw new CfnAccessDeniedException(operation, exception);
+      throw new CfnAccessDeniedException(exception);
     if (exception instanceof ConflictException) {
         throw new CfnAlreadyExistsException(ResourceModel.TYPE_NAME, domainName, exception);
     }
