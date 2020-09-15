@@ -24,6 +24,7 @@ Resources:
               - Effect: Allow
                 Action:
                 - "codeartifact:AssociateExternalConnection"
+                - "codeartifact:AssociateWithDownstreamRepository"
                 - "codeartifact:CreateRepository"
                 - "codeartifact:DeleteRepository"
                 - "codeartifact:DeleteRepositoryPermissionsPolicy"
