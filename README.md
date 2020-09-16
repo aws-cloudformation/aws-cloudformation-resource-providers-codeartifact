@@ -31,7 +31,8 @@ aws cloudformation wait stack-create-complete \
 # Get the value of the ExecutionRoleArn Output
 export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
   --stack-name domain-resource-execution-role \
-  | jq -r '.Stacks[] | select(.StackName == "domain-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
+  --query "Stacks[?StackName=='domain-resource-execution-role'].Outputs[0][?OutputKey=='ExecutionRoleArn'].OutputValue" \
+  --output text)
 
 # Register the domain resource
 aws cloudformation register-type \
@@ -58,7 +59,8 @@ aws cloudformation wait stack-create-complete \
 # Get the value of the ExecutionRoleArn Output
 export STACK_ROLE_NAME=$(aws cloudformation describe-stacks \
   --stack-name repository-resource-execution-role \
-  | jq -r '.Stacks[] | select(.StackName == "repository-resource-execution-role") | .Outputs[] | select(.OutputKey == "ExecutionRoleArn") | .OutputValue')
+  --query "Stacks[?StackName=='repository-resource-execution-role'].Outputs[0][?OutputKey=='ExecutionRoleArn'].OutputValue" \
+  --output text)
 
 # Register the repository resource
 aws cloudformation register-type \
