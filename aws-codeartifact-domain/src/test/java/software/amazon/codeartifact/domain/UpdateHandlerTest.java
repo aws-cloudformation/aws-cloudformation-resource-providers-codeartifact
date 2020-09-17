@@ -61,6 +61,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
     private final ResourceModel desiredOutputModel = ResourceModel.builder()
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
+        .owner(DOMAIN_OWNER)
+        .name(DOMAIN_NAME)
         .arn(DOMAIN_ARN)
         .encryptionKey(ENCRYPTION_KEY_ARN)
         .build();

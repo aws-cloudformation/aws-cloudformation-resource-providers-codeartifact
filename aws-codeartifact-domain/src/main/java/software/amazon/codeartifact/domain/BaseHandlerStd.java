@@ -83,12 +83,11 @@ public abstract class BaseHandlerStd extends BaseHandler<CallbackContext> {
 
     protected boolean doesDomainExist(
         final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient,
-        ResourceHandlerRequest<ResourceModel> request
+        final ProxyClient<CodeartifactClient> proxyClient
     ) {
         try {
             proxyClient.injectCredentialsAndInvokeV2(
-                Translator.translateToReadRequest(model, request), proxyClient.client()::describeDomain);
+                Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
             return true;
         } catch (ResourceNotFoundException e) {
             return false;

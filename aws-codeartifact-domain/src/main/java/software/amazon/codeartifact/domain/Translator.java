@@ -58,12 +58,9 @@ public class Translator {
   /**
    * Request to read a resource
    * @param model resource model
-   * @param request resource handler request
    * @return awsRequest the aws service request to describe a resource
    */
-  static DescribeDomainRequest translateToReadRequest(
-      final ResourceModel model, final ResourceHandlerRequest<ResourceModel> request
-  ) {
+  static DescribeDomainRequest translateToReadRequest(final ResourceModel model) {
     String domainName = model.getDomainName();
     String domainOwner = model.getDomainOwner();
 
@@ -91,6 +88,8 @@ public class Translator {
         .domainName(domain.name())
         .encryptionKey(domain.encryptionKey())
         .domainOwner(domain.owner())
+        .name(domain.name())
+        .owner(domain.owner())
         .arn(domain.arn())
         .build();
   }

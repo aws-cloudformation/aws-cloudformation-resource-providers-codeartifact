@@ -70,8 +70,10 @@ public class CreateHandlerTest extends AbstractTestBase {
         .build();
 
     private final ResourceModel desiredOutputModel = ResourceModel.builder()
+        .name(DOMAIN_NAME)
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
+        .owner(DOMAIN_OWNER)
         .arn(DOMAIN_ARN)
         .encryptionKey(ENCRYPTION_KEY_ARN)
         .build();

@@ -1,15 +1,14 @@
 package software.amazon.codeartifact.domain;
 
+import java.util.Objects;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import java.util.Objects;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;
@@ -24,11 +23,14 @@ public class UpdateHandler extends BaseHandlerStd {
 
         this.logger = logger;
 
-        String desiredDomainName = request.getDesiredResourceState().getDomainName();
-        String previousDomainName = request.getPreviousResourceState().getDomainName();
-        if (!Objects.equals(previousDomainName, desiredDomainName)) {
-            // cannot update domainName because it's CreateOnly
-            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredDomainName);
+        ResourceModel desiredResourceState = request.getDesiredResourceState();
+        ResourceModel previousResourceState = request.getPreviousResourceState();
+        if (!Objects.equals(previousResourceState.getDomainName(), desiredResourceState.getDomainName()) ||
+            !Objects.equals(previousResourceState.getEncryptionKey(), desiredResourceState.getEncryptionKey())
+        ) {
+            logger.log("Unupdatable exception here jonjar");
+            // cannot update domainName/EncryptionKey because it's CreateOnly
+            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredResourceState.getArn());
         }
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
