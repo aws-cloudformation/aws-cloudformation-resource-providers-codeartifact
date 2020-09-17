@@ -28,7 +28,6 @@ public class UpdateHandler extends BaseHandlerStd {
         if (!Objects.equals(previousResourceState.getDomainName(), desiredResourceState.getDomainName()) ||
             !Objects.equals(previousResourceState.getEncryptionKey(), desiredResourceState.getEncryptionKey())
         ) {
-            logger.log("Unupdatable exception here jonjar");
             // cannot update domainName/EncryptionKey because it's CreateOnly
             throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredResourceState.getArn());
         }
