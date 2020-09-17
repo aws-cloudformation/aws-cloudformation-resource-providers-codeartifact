@@ -59,8 +59,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
         .build();
 
     private final ResourceModel desiredOutputModel = ResourceModel.builder()
-        .domainName(DOMAIN_NAME)
-        .domainOwner(DOMAIN_OWNER)
         .owner(DOMAIN_OWNER)
         .name(DOMAIN_NAME)
         .arn(DOMAIN_ARN)

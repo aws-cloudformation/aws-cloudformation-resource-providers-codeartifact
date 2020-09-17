@@ -79,7 +79,8 @@
   "readOnlyProperties": [
     "/properties/Name",
     "/properties/DomainName",
-    "/properties/DomainOwner"
+    "/properties/DomainOwner",
+    "/properties/Arn"
   ],
   "primaryIdentifier": [
     "/properties/Arn"

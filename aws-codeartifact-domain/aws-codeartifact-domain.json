@@ -55,7 +55,8 @@
   "readOnlyProperties": [
     "/properties/Owner",
     "/properties/Name",
-    "/properties/EncryptionKey"
+    "/properties/EncryptionKey",
+    "/properties/Arn"
   ],
   "primaryIdentifier": [
     "/properties/Arn"

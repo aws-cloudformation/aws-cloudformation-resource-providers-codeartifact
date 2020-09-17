@@ -85,9 +85,7 @@ public class Translator {
   static ResourceModel translateFromReadResponse(final DescribeDomainResponse awsResponse) {
     DomainDescription domain = awsResponse.domain();
     return ResourceModel.builder()
-        .domainName(domain.name())
         .encryptionKey(domain.encryptionKey())
-        .domainOwner(domain.owner())
         .name(domain.name())
         .owner(domain.owner())
         .arn(domain.arn())

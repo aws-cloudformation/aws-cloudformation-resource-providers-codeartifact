@@ -86,7 +86,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -126,7 +125,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -165,7 +163,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -219,7 +216,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
@@ -274,7 +270,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -334,7 +329,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -392,7 +386,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
@@ -461,7 +454,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
@@ -517,7 +509,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
@@ -580,7 +571,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
@@ -667,7 +657,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -697,10 +686,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
     public void handleRequest_simpleSuccess_withExistingExternalConnections_doesNotCallUpdateRepo() {
         final UpdateHandler handler = new UpdateHandler();
 
-        final ResourceModel desiredOutputModel = ResourceModel.builder()
+        final ResourceModel inputModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
-            .name(REPO_NAME)
             .repositoryName(REPO_NAME)
             .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
@@ -713,7 +701,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
-            .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .administratorAccount(ADMIN_ACCOUNT)
@@ -727,7 +714,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         // this happens when permission policy is stabilized
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-            .desiredResourceState(desiredOutputModel)
+            .desiredResourceState(inputModel)
             .previousResourceState(prevModelWithPypiEc)
             .build();
 
