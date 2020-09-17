@@ -544,7 +544,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .administratorAccount("12345")
+            .name(REPO_NAME)
             .repositoryName(REPO_NAME)
             .build();
 
