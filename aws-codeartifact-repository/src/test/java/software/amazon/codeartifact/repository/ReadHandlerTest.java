@@ -69,6 +69,7 @@ public class ReadHandlerTest extends AbstractTestBase {
         .domainName(DOMAIN_NAME)
         .domainOwner(DOMAIN_OWNER)
         .arn(REPO_ARN)
+        .repositoryName(REPO_NAME)
         .name(REPO_NAME)
         .description(DESCRIPTION)
         .administratorAccount(ADMIN_ACCOUNT)

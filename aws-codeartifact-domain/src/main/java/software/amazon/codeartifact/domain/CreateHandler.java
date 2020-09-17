@@ -68,7 +68,7 @@ public class CreateHandler extends BaseHandlerStd {
     }
 
     private boolean hasReadOnlyProperties(final ResourceModel model) {
-        return model.getDomainOwner() != null;
+        return model.getDomainOwner() != null || model.getName() != null || model.getOwner() != null;
     }
 
     private boolean isStabilized(

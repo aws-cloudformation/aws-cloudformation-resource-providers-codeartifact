@@ -87,6 +87,8 @@ public class Translator {
     return ResourceModel.builder()
         .encryptionKey(domain.encryptionKey())
         .name(domain.name())
+        .domainName(domain.name())
+        .domainOwner(domain.owner())
         .owner(domain.owner())
         .arn(domain.arn())
         .build();
