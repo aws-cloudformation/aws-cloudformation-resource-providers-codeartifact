@@ -10,6 +10,13 @@
       "minLength": 2,
       "maxLength": 100
     },
+    "Name": {
+      "description": "The name of the repository. This is used for GetAtt",
+      "type": "string",
+      "pattern": "^([A-Za-z0-9][A-Za-z0-9._\\-]{1,99})$",
+      "minLength": 2,
+      "maxLength": 100
+    },
     "DomainName": {
       "description": "The name of the domain that contains the repository.",
       "type": "string",
@@ -70,9 +77,10 @@
     "/properties/DomainOwner"
   ],
   "readOnlyProperties": [
-    "/properties/RepositoryName",
+    "/properties/Name",
     "/properties/DomainName",
-    "/properties/DomainOwner"
+    "/properties/DomainOwner",
+    "/properties/Arn"
   ],
   "primaryIdentifier": [
     "/properties/Arn"

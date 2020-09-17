@@ -34,7 +34,7 @@ public class DeleteHandler extends BaseHandlerStd {
 
                 // if domain does not exist, deleteDomain does not throw an exception, so we must do this
                 // to be under the ResourceHandler Contract
-                if (!doesDomainExist(model, proxyClient, request)) {
+                if (!doesDomainExist(model, proxyClient)) {
                     throw new CfnNotFoundException(model.getDomainName(), ResourceModel.TYPE_NAME);
                 }
 
@@ -53,7 +53,7 @@ public class DeleteHandler extends BaseHandlerStd {
                 return awsResponse;
             })
             // STEP 2.3 [Stabilize to check if the resource got deleted]
-            .stabilize((deleteDomainRequest, deleteDomainResponse, proxyInvocation, resourceModel, context) -> !doesDomainExist(model, proxyClient, request))
+            .stabilize((deleteDomainRequest, deleteDomainResponse, proxyInvocation, resourceModel, context) -> !doesDomainExist(model, proxyClient))
             .success();
 
 

@@ -25,7 +25,7 @@ public class ReadHandler extends BaseHandlerStd {
         return proxy.initiate("AWS-CodeArtifact-Domain::Read", proxyClient, request.getDesiredResourceState(), callbackContext)
 
             // STEP 2 [construct a body of a request]
-            .translateToServiceRequest((model) -> Translator.translateToReadRequest(model, request))
+            .translateToServiceRequest(Translator::translateToReadRequest)
             // STEP 3 [make an api call]
             .makeServiceCall((awsRequest, client) -> {
                 logger.log(String.format("%s read handler is being invoked", ResourceModel.TYPE_NAME));

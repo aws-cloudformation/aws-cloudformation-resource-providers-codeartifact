@@ -46,7 +46,7 @@ public class CreateHandler extends BaseHandlerStd {
         return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient,progress.getResourceModel(), progress.getCallbackContext())
             .translateToServiceRequest(Translator::translateToCreateRequest)
             .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
-            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, request))
+            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client))
             .progress();
     }
 
@@ -73,11 +73,10 @@ public class CreateHandler extends BaseHandlerStd {
 
     private boolean isStabilized(
         final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient,
-        ResourceHandlerRequest<ResourceModel> request
+        final ProxyClient<CodeartifactClient> proxyClient
     ) {
         DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
-            Translator.translateToReadRequest(model, request), proxyClient.client()::describeDomain);
+            Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
 
         String domainStatus = describeDomainResponse.domain()
             .status()

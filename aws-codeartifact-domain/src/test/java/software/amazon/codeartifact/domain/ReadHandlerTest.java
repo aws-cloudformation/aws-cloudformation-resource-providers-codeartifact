@@ -95,8 +95,8 @@ public class ReadHandlerTest extends AbstractTestBase {
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
-            .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .owner(DOMAIN_OWNER)
             .arn(DOMAIN_ARN)
             .encryptionKey(ENCRYPTION_KEY_ARN)
             .build();
@@ -146,8 +146,8 @@ public class ReadHandlerTest extends AbstractTestBase {
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
-            .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .owner(DOMAIN_OWNER)
             .arn(DOMAIN_ARN)
             .encryptionKey(ENCRYPTION_KEY_ARN)
             .build();
