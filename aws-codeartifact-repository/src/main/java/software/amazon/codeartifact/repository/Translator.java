@@ -59,7 +59,6 @@ public class Translator {
    * @return awsRequest the aws service request to create a resource
    */
   static CreateRepositoryRequest translateToCreateRequest(final ResourceModel model) {
-    System.out.println(model.getRepositoryName() + "\n\n\n\n\n");
     return CreateRepositoryRequest.builder()
         .domain(model.getDomainName())
         .domainOwner(model.getDomainOwner())

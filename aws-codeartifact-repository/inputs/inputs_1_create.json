@@ -11,7 +11,7 @@
     ]
   },
   "Upstreams": null,
-  "ExternalConnections":[
+  "ExternalConnections": [
     "public:npmjs"
   ],
   "RepositoryName": "repo-contract-test",
