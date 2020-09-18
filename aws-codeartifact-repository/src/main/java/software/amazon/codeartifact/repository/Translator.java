@@ -142,6 +142,7 @@ public class Translator {
         .domainName(repositoryDescription.domainName())
         .domainOwner(repositoryDescription.domainOwner())
         .description(repositoryDescription.description())
+        .repositoryName(repositoryDescription.name())
         .name(repositoryDescription.name());
 
     if (!CollectionUtils.isEmpty(repositoryDescription.upstreams())) {

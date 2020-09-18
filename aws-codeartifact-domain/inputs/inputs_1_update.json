@@ -1,0 +1,18 @@
+{
+  "PermissionsPolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": "*",
+        "Action": "codeartifact:*",
+        "Resource": "*"
+      }
+    ]
+  },
+  "Upstreams": null,
+  "ExternalConnections": null,
+  "DomainOwner": null,
+  "DomainName": "create-contract-domain",
+  "Description": "test description"
+}

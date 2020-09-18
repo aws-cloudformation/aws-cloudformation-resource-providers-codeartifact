@@ -29,7 +29,7 @@ public class UpdateHandler extends BaseHandlerStd {
             !Objects.equals(previousResourceState.getEncryptionKey(), desiredResourceState.getEncryptionKey())
         ) {
             // cannot update domainName/EncryptionKey because it's CreateOnly
-            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredResourceState.getArn());
+            throw new CfnNotUpdatableException(ResourceModel.TYPE_NAME, desiredResourceState.getDomainName());
         }
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)

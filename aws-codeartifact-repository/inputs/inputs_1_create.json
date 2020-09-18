@@ -1,0 +1,21 @@
+{
+  "PermissionsPolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": "*",
+        "Action": "codeartifact:*",
+        "Resource": "*"
+      }
+    ]
+  },
+  "Upstreams": null,
+  "ExternalConnections": [
+    "public:npmjs"
+  ],
+  "RepositoryName": "repo-contract-test",
+  "DomainOwner": null,
+  "Description": "description",
+  "DomainName": "domain"
+}
