@@ -112,6 +112,7 @@ public class Translator {
     String repositoryName = model.getRepositoryName();
 
     if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
+      System.out.println("Read using only Arn");
         // this happens when Ref or GetAtt are called
         RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
 

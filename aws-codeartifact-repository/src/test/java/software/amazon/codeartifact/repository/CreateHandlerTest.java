@@ -100,6 +100,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
@@ -170,6 +173,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
@@ -227,6 +233,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
@@ -295,6 +304,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
@@ -342,6 +354,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
@@ -383,6 +398,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnAlreadyExistsException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -408,6 +426,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnServiceLimitExceededException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -432,6 +453,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnInvalidRequestException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -457,6 +481,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnServiceInternalErrorException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -481,6 +508,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnAccessDeniedException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -505,6 +535,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnNotFoundException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -529,6 +562,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnGeneralServiceException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
@@ -550,6 +586,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
             .build();
 
         assertThrows(CfnInvalidRequestException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));

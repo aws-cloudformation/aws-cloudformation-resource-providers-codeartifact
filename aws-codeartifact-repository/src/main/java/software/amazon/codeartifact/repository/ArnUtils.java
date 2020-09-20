@@ -1,7 +1,8 @@
 package software.amazon.codeartifact.repository;
 
 public class ArnUtils {
-
+    public static final String SERVICE_NAME = "codeartifact";
+    public static final String REPO_RESOURCE_TYPE = "repository";
     public static RepositoryArn fromArn(String arn) {
 
         // TODO (jonjara) move ArnUtils to a common module
@@ -26,6 +27,20 @@ public class ArnUtils {
             .service(service)
             .owner(domainOwner)
             .type(resourceType)
+            .domainName(domainName)
+            .repoName(repoName)
+            .build();
+    }
+
+    public static RepositoryArn repoArn(
+        String partition, String region, String domainOwner, String domainName, String repoName
+    ) {
+        return RepositoryArn.builder()
+            .partition(partition)
+            .region(region)
+            .service(SERVICE_NAME)
+            .owner(domainOwner)
+            .type(REPO_RESOURCE_TYPE)
             .domainName(domainName)
             .repoName(repoName)
             .build();
