@@ -27,11 +27,13 @@ import software.amazon.cloudformation.proxy.ProxyClient;
 public class AbstractTestBase {
   public static final ObjectMapper MAPPER = new ObjectMapper();
   protected static final String DOMAIN_NAME = "test-domain-name";
+  protected static final String PARTITION = "aws";
+  protected static final String REGION = "us-west-2";
   protected static final String DOMAIN_OWNER = "12345";
   protected static final String ADMIN_ACCOUNT = "54321";
   protected static final String REPO_NAME = "test-repo-name";
-  protected static final String REPO_ARN = String.format("arn:aws:codeartifact:region:%s:repository/%s/%s",
-      DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+  protected static final String REPO_ARN = String.format("arn:aws:codeartifact:%s:%s:repository/%s/%s",
+      REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
   protected static final Map<String, Object> TEST_POLICY_DOC_0 = Collections.singletonMap("key0", "value0");
   protected static final Map<String, Object> TEST_POLICY_DOC_1 = Collections.singletonMap("key1", "value1");
 

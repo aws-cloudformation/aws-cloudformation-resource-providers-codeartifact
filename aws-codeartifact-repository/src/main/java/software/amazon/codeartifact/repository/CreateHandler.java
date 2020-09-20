@@ -4,7 +4,6 @@ import java.util.Set;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
-import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -33,11 +32,28 @@ public class CreateHandler extends BaseHandlerStd {
             throw new CfnInvalidRequestException("Attempting to set a ReadOnly Property.");
         }
 
+        // Setting primaryId first in case rollback occurs, we need the Id to be able to rollback
+        setPrimaryIdentifier(request, model);
+
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
             .then(progress -> createRepository(proxy, progress, proxyClient))
             .then(progress -> putRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
             .then(progress -> associateExternalConnections(progress, callbackContext, request, proxyClient, externalConnectionsToAdd, logger))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
+    }
+
+    private void setPrimaryIdentifier(ResourceHandlerRequest<ResourceModel> request, ResourceModel model) {
+        String domainOwner = model.getDomainOwner() == null ? request.getAwsAccountId() : model.getDomainOwner();
+
+        RepositoryArn repoArn = ArnUtils.repoArn(
+            request.getAwsPartition(),
+            request.getRegion(),
+            domainOwner,
+            model.getDomainName(),
+            model.getRepositoryName()
+        );
+
+        model.setArn(repoArn.arn());
     }
 
     private ProgressEvent<ResourceModel, CallbackContext> createRepository(
@@ -71,9 +87,8 @@ public class CreateHandler extends BaseHandlerStd {
         final ProxyClient<CodeartifactClient> proxyClient
     ) {
         try {
-            DescribeRepositoryResponse response = proxyClient.injectCredentialsAndInvokeV2(
+            proxyClient.injectCredentialsAndInvokeV2(
                     Translator.translateToReadRequest(model), proxyClient.client()::describeRepository);
-            model.setArn(response.repository().arn());
             return true;
         } catch (ResourceNotFoundException e) {
             return false;
