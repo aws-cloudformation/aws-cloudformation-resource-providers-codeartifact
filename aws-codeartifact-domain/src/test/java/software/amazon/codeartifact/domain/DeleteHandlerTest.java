@@ -78,7 +78,6 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .build();
 
         DeleteDomainResponse deleteDomainResponse = DeleteDomainResponse.builder()

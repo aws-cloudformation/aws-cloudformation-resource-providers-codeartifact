@@ -89,7 +89,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -129,7 +128,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -168,7 +166,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -223,7 +220,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -277,7 +273,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -337,7 +332,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -385,7 +379,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -398,7 +391,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
 //            .externalConnections(Collections.singletonList(NPM_EC))
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -454,7 +446,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -467,7 +458,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
 //            .externalConnections(Collections.singletonList(NPM_EC))
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -510,7 +500,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -523,7 +512,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
             //  paramter
 //            .externalConnections(Collections.singletonList(NPM_EC))
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -573,7 +561,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -584,7 +571,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
@@ -660,7 +646,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -670,7 +655,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -715,7 +699,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -792,7 +775,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .externalConnections(Collections.singletonList(PYPI_EC))
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
     }
 
