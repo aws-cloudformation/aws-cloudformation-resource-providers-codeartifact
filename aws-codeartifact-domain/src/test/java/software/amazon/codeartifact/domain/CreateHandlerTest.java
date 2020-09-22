@@ -71,7 +71,6 @@ public class CreateHandlerTest extends AbstractTestBase {
 
     private final ResourceModel desiredOutputModel = ResourceModel.builder()
         .domainName(DOMAIN_NAME)
-        .domainOwner(DOMAIN_OWNER)
         .name(DOMAIN_NAME)
         .owner(DOMAIN_OWNER)
         .arn(DOMAIN_ARN)

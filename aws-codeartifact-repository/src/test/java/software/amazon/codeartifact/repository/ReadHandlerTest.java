@@ -72,7 +72,6 @@ public class ReadHandlerTest extends AbstractTestBase {
         .repositoryName(REPO_NAME)
         .name(REPO_NAME)
         .description(DESCRIPTION)
-        .administratorAccount(ADMIN_ACCOUNT)
         .build();
 
 

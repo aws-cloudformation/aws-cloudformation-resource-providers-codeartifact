@@ -138,7 +138,6 @@ public class Translator {
         // TODO add repositoryEndpoint
         .arn(repositoryDescription.arn())
         .description(repositoryDescription.description())
-        .administratorAccount(repositoryDescription.administratorAccount())
         .domainName(repositoryDescription.domainName())
         .domainOwner(repositoryDescription.domainOwner())
         .description(repositoryDescription.description())

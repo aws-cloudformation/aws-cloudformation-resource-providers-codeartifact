@@ -95,7 +95,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -152,7 +151,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -213,7 +211,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .arn(REPO_ARN)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
@@ -286,7 +283,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -357,7 +353,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            .administratorAccount(ADMIN_ACCOUNT)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()

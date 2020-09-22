@@ -50,7 +50,6 @@ public class ReadHandlerTest extends AbstractTestBase {
 
     private final ResourceModel model = ResourceModel.builder()
         .domainName(DOMAIN_NAME)
-        .domainOwner(DOMAIN_OWNER)
         .build();
 
     @BeforeEach
@@ -96,7 +95,6 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .owner(DOMAIN_OWNER)
             .name(DOMAIN_NAME)
             .arn(DOMAIN_ARN)
@@ -149,7 +147,6 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .name(DOMAIN_NAME)
             .owner(DOMAIN_OWNER)
             .arn(DOMAIN_ARN)

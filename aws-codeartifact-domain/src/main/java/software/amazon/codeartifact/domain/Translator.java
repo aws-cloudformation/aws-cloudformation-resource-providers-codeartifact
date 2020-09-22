@@ -62,7 +62,7 @@ public class Translator {
    */
   static DescribeDomainRequest translateToReadRequest(final ResourceModel model) {
     String domainName = model.getDomainName();
-    String domainOwner = model.getDomainOwner();
+    String domainOwner = model.getOwner();
 
     if (model.getArn() != null && domainName == null && domainOwner == null) {
       // This is the case GetAtt or Ref is called on the resource
@@ -88,7 +88,6 @@ public class Translator {
         .encryptionKey(domain.encryptionKey())
         .name(domain.name())
         .domainName(domain.name())
-        .domainOwner(domain.owner())
         .owner(domain.owner())
         .arn(domain.arn())
         .build();
@@ -102,7 +101,6 @@ public class Translator {
   static DeleteDomainRequest translateToDeleteRequest(final ResourceModel model) {
     return DeleteDomainRequest.builder()
         .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
         .build();
   }
 
@@ -115,7 +113,6 @@ public class Translator {
       try {
         return PutDomainPermissionsPolicyRequest.builder()
             .policyDocument(MAPPER.writeValueAsString(model.getPermissionsPolicyDocument()))
-            .domainOwner(model.getDomainOwner())
             .domain(model.getDomainName())
             .build();
       } catch (final JsonProcessingException e) {
@@ -130,7 +127,6 @@ public class Translator {
    */
   static DeleteDomainPermissionsPolicyRequest translateDeleteDomainPolicyRequest(final ResourceModel model) {
     return DeleteDomainPermissionsPolicyRequest.builder()
-        .domainOwner(model.getDomainOwner())
         .domain(model.getDomainName())
         .build();
   }

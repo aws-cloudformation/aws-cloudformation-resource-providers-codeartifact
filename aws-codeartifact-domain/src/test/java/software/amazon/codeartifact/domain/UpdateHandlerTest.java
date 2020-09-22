@@ -60,7 +60,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
     private final ResourceModel desiredOutputModel = ResourceModel.builder()
         .domainName(DOMAIN_NAME)
-        .domainOwner(DOMAIN_OWNER)
         .owner(DOMAIN_OWNER)
         .name(DOMAIN_NAME)
         .arn(DOMAIN_ARN)
@@ -85,13 +84,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .permissionsPolicyDocument(TEST_POLICY_DOC)
             .build();
 
         final ResourceModel previousModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .build();
 
         PutDomainPermissionsPolicyResponse putDomainPermissionsPolicyResponse = PutDomainPermissionsPolicyResponse.builder()
@@ -138,12 +135,10 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .build();
 
         final ResourceModel previousModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .domainOwner(DOMAIN_OWNER)
             .permissionsPolicyDocument(TEST_POLICY_DOC)
             .build();
 
@@ -194,7 +189,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         final ResourceModel previousModel = ResourceModel.builder()
             .domainName("different-domain-name")
-            .domainOwner(DOMAIN_OWNER)
             .permissionsPolicyDocument(TEST_POLICY_DOC)
             .build();
 
