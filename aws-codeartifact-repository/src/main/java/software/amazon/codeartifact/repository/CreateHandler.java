@@ -1,10 +1,12 @@
 package software.amazon.codeartifact.repository;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
@@ -14,6 +16,8 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 
 public class CreateHandler extends BaseHandlerStd {
+    private static final int PROPAGATION_DELAY_S = 10;
+    private static final long PROPAGATION_DELAY_MS = TimeUnit.SECONDS.toMillis(PROPAGATION_DELAY_S);
     private Logger logger;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -67,6 +71,10 @@ public class CreateHandler extends BaseHandlerStd {
                 AwsResponse awsResponse = null;
                 try {
                     awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, client.client()::createRepository);
+                    logger.log(String.format("waiting %s milliseconds for repository to become available", PROPAGATION_DELAY_MS));
+                    Thread.sleep(PROPAGATION_DELAY_MS);
+                } catch (InterruptedException e) {
+                    throw new CfnGeneralServiceException(e);
                 } catch (final AwsServiceException e) {
                     String repositoryName = progress.getResourceModel().getRepositoryName();
                     Translator.throwCfnException(e, Constants.CREATE_REPOSITORY, repositoryName);
@@ -89,6 +97,7 @@ public class CreateHandler extends BaseHandlerStd {
         try {
             proxyClient.injectCredentialsAndInvokeV2(
                     Translator.translateToReadRequest(model), proxyClient.client()::describeRepository);
+            logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
             return true;
         } catch (ResourceNotFoundException e) {
             return false;
