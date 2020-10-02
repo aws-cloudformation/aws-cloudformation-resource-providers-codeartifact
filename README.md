@@ -39,7 +39,7 @@ aws cloudformation register-type \
      --region us-east-1 \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Domain" \
-     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.0.zip" \
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-domain-1.1.zip" \
      --execution-role $STACK_ROLE_NAME
 ```
 
@@ -67,7 +67,7 @@ aws cloudformation register-type \
      --region us-east-1 \
      --type RESOURCE \
      --type-name "AWSdevToolsBeta::CodeArtifact::Repository" \
-     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.0.zip" \
+     --schema-handler-package "s3://codeartifact-cfn-beta/awsdevtoolsbeta-codeartifact-repository-1.1.zip" \
      --execution-role $STACK_ROLE_NAME
 ```
 
