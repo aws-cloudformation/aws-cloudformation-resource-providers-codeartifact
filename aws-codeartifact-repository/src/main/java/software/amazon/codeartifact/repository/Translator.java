@@ -4,6 +4,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -132,10 +133,17 @@ public class Translator {
    * @param describeRepositoryResponse the aws service describe resource response
    * @return model resource model
    */
-  static ResourceModel translateFromReadResponse(final DescribeRepositoryResponse describeRepositoryResponse) {
+  static ResourceModel translateFromReadResponse(
+      final DescribeRepositoryResponse describeRepositoryResponse, ResourceModel model
+  ) {
     RepositoryDescription repositoryDescription = describeRepositoryResponse.repository();
+
+    List<String> externalConnections = model.getExternalConnections();
+    Map<String, Object> permissionsPolicy = model.getPermissionsPolicyDocument();
+
     ResourceModelBuilder resourceModelBuilder = ResourceModel.builder()
-        // TODO add repositoryEndpoint
+        .externalConnections(externalConnections)
+        .permissionsPolicyDocument(permissionsPolicy)
         .arn(repositoryDescription.arn())
         .description(repositoryDescription.description())
         .domainName(repositoryDescription.domainName())

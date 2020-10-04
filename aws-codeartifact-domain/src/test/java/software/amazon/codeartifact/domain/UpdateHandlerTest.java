@@ -117,6 +117,16 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .owner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .arn(DOMAIN_ARN)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
         assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
         assertThat(response.getResourceModels()).isNull();
         assertThat(response.getMessage()).isNull();

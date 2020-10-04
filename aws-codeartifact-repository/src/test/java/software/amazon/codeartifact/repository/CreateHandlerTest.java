@@ -281,6 +281,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .build();
@@ -350,6 +351,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
+            .externalConnections(Collections.singletonList(NPM_EC))
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)

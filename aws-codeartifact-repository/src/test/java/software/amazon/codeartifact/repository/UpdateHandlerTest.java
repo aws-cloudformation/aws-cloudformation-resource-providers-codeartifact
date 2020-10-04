@@ -86,6 +86,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
@@ -125,6 +126,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
@@ -196,7 +198,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .upstreams(UPSTREAMS)
-            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
@@ -329,6 +330,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
+            .externalConnections(Collections.singletonList(NPM_EC))
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
@@ -388,9 +390,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
-            //  paramter
-//            .externalConnections(Collections.singletonList(NPM_EC))
+            .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -455,9 +455,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
-            //  paramter
-//            .externalConnections(Collections.singletonList(NPM_EC))
+            .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -509,9 +507,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
-            // TODO(jonjara)this would be true but we need to update the ReadHandler to populate ExternalConnection
-            //  paramter
-//            .externalConnections(Collections.singletonList(NPM_EC))
+            .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
         UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
@@ -653,6 +649,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
+            .externalConnections(Collections.singletonList(NPM_EC))
+
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .build();
@@ -697,6 +695,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
+            .externalConnections(Collections.singletonList(NPM_EC))
             .arn(REPO_ARN)
             .description(DESCRIPTION)
             .build();

@@ -21,6 +21,7 @@ public class ReadHandler extends BaseHandlerStd {
 
         this.logger = logger;
 
+        ResourceModel model = request.getDesiredResourceState();
         // STEP 1 [initialize a proxy context]
         return proxy.initiate("AWS-CodeArtifact-Domain::Read", proxyClient, request.getDesiredResourceState(), callbackContext)
             // STEP 2 [construct a body of a request]
@@ -38,6 +39,8 @@ public class ReadHandler extends BaseHandlerStd {
                 return awsResponse;
             })
             // STEP 4 [gather all properties of the resource]
-            .done(awsResponse -> ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(awsResponse)));
+            .done(awsResponse ->
+                ProgressEvent.defaultSuccessHandler(Translator.translateFromReadResponse(awsResponse, model))
+            );
     }
 }

@@ -10,8 +10,5 @@
       }
     ]
   },
-  "Upstreams": null,
-  "ExternalConnections": null,
-  "DomainName": "create-contract-domain",
-  "Description": "test description"
+  "DomainName": "create-contract-domain"
 }

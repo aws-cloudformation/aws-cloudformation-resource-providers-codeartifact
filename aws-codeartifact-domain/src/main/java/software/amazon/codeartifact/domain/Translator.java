@@ -2,6 +2,7 @@ package software.amazon.codeartifact.domain;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -82,9 +83,15 @@ public class Translator {
    * @param awsResponse the aws service describe resource response
    * @return model resource model
    */
-  static ResourceModel translateFromReadResponse(final DescribeDomainResponse awsResponse) {
+  static ResourceModel translateFromReadResponse(
+      final DescribeDomainResponse awsResponse, final ResourceModel model
+  ) {
+
+    Map<String, Object> permissionsPolicy = model.getPermissionsPolicyDocument();
+
     DomainDescription domain = awsResponse.domain();
     return ResourceModel.builder()
+        .permissionsPolicyDocument(permissionsPolicy)
         .encryptionKey(domain.encryptionKey())
         .name(domain.name())
         .domainName(domain.name())
