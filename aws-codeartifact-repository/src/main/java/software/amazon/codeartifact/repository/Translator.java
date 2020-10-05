@@ -133,7 +133,7 @@ public class Translator {
     String repositoryName = model.getRepositoryName();
 
     if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
-        // this happens when Ref or GetAtt are called
+        // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
         RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
 
         domainName = repositoryArn.domainName();
@@ -227,7 +227,7 @@ public class Translator {
     String repositoryName = model.getRepositoryName();
 
     if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
-      // this happens when Ref or GetAtt are called
+      // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
       RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
 
       domainName = repositoryArn.domainName();
