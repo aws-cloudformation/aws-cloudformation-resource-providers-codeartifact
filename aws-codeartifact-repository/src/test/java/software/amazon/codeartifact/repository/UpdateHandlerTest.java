@@ -31,8 +31,12 @@ import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermis
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
+import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
+import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
@@ -96,6 +100,15 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        GetRepositoryPermissionsPolicyResponse getRepositoryPermissionsPolicyResponse = GetRepositoryPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC_0))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenReturn(getRepositoryPermissionsPolicyResponse);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -136,6 +149,16 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+
+        GetRepositoryPermissionsPolicyResponse getRepositoryPermissionsPolicyResponse = GetRepositoryPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC_0))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenReturn(getRepositoryPermissionsPolicyResponse);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -223,11 +246,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -276,11 +299,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -323,8 +346,21 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
-        // describe repo response has no external connections, we need to add the one in the Resourcemodel
-        final RepositoryDescription repositoryDescription = RepoInfoWithOutExternalConnections();
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
@@ -336,11 +372,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -393,11 +429,27 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -458,6 +510,22 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
@@ -510,11 +578,28 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
+
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -582,11 +667,11 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .build();
 
-        UpdateRepositoryResponse updatePackageVersionsStatusResponse = UpdateRepositoryResponse.builder()
+        UpdateRepositoryResponse updateRepositoryResponse = UpdateRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
-        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updatePackageVersionsStatusResponse);
+        when(proxyClient.client().updateRepository(any(UpdateRepositoryRequest.class))).thenReturn(updateRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -634,8 +719,24 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
         // describe repo response has no external connections, we need to add the one in the Resourcemodel
-        final ResourceModel prevModelWithNpmEc =  ResourceModel.builder()
+        final ResourceModel prevModelWithNpmEc = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
@@ -700,9 +801,26 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .description(DESCRIPTION)
             .build();
 
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                        .externalConnectionName(NPM_EC)
+                        .build()
+                )
+            )
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
+
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
         // this happens when permission policy is stabilized

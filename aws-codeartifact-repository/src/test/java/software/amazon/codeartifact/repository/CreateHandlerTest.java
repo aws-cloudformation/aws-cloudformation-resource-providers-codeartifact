@@ -33,10 +33,14 @@ import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryReques
 import software.amazon.awssdk.services.codeartifact.model.CreateRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
+import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
@@ -117,6 +121,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -173,6 +178,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -243,6 +249,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -297,6 +304,16 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        GetRepositoryPermissionsPolicyResponse getRepositoryPermissionsPolicyResponse = GetRepositoryPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC_0))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenReturn(getRepositoryPermissionsPolicyResponse);
+
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -343,6 +360,13 @@ public class CreateHandlerTest extends AbstractTestBase {
             .administratorAccount(ADMIN_ACCOUNT)
             .arn(REPO_ARN)
             .description(DESCRIPTION)
+            .externalConnections(
+                Collections.singletonList(
+                    RepositoryExternalConnectionInfo.builder()
+                    .externalConnectionName(NPM_EC)
+                    .build()
+                )
+            )
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
             .build();
@@ -368,6 +392,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -394,7 +419,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .externalConnections(Arrays.asList("public:npmjs", "public:pypi"))
+            .externalConnections(Arrays.asList(NPM_EC, PYPI_EC))
             .description(DESCRIPTION)
             .build();
 
@@ -418,6 +443,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()

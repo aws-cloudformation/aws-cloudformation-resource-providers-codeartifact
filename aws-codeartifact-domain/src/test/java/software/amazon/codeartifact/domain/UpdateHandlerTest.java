@@ -25,8 +25,11 @@ import software.amazon.awssdk.services.codeartifact.model.DeleteDomainPermission
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
@@ -105,6 +108,15 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domain(domainDescription)
             .build();
 
+        GetDomainPermissionsPolicyResponse getDomainPermissionsPolicyResponse = GetDomainPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenReturn(getDomainPermissionsPolicyResponse);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -167,6 +179,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domain(domainDescription)
             .build();
 
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()

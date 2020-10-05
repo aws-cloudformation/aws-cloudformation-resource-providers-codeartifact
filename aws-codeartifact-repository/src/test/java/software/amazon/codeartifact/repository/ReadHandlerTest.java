@@ -9,6 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,9 +24,12 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
@@ -96,6 +101,7 @@ public class ReadHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -114,7 +120,58 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
     }
+
+    @Test
+    public void handleRequest_success_with_policy() throws JsonProcessingException {
+        final ReadHandler handler = new ReadHandler();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .arn(REPO_ARN)
+            .repositoryName(REPO_NAME)
+            .name(REPO_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC_0)
+            .description(DESCRIPTION)
+            .build();
+
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        GetRepositoryPermissionsPolicyResponse getRepositoryPermissionsPolicyResponse = GetRepositoryPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC_0))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenReturn(getRepositoryPermissionsPolicyResponse);
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .logicalResourceIdentifier(REPO_ARN)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+    }
+
 
     @Test
     public void handleRequest_simpleSuccess_onlyArn() {
@@ -128,6 +185,7 @@ public class ReadHandlerTest extends AbstractTestBase {
             .repository(repositoryDescription)
             .build();
 
+        when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -154,6 +212,8 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(describeRepositoryRequest.repository()).isEqualTo(REPO_NAME);
         assertThat(describeRepositoryRequest.domain()).isEqualTo(DOMAIN_NAME);
         assertThat(describeRepositoryRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
+
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
     }
 
     @Test

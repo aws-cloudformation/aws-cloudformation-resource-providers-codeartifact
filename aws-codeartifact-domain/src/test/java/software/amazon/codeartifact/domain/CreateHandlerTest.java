@@ -30,9 +30,13 @@ import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
@@ -108,6 +112,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domain(domainDescription)
             .build();
 
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -125,6 +130,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).createDomain(any(CreateDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
         verify(codeartifactClient, times(2)).describeDomain(any(DescribeDomainRequest.class));
         verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
 
@@ -149,6 +155,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domain(domainDescription)
             .build();
 
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -170,6 +177,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient).createDomain(createDomainRequestArgumentCaptor.capture());
         verify(codeartifactClient, times(2)).describeDomain(any(DescribeDomainRequest.class));
         verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
 
         CreateDomainRequest createDomainRequestValue = createDomainRequestArgumentCaptor.getValue();
 
@@ -199,6 +207,16 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domain(domainDescription)
             .build();
 
+
+        GetDomainPermissionsPolicyResponse getDomainPermissionsPolicyResponse = GetDomainPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                    .document(MAPPER.writeValueAsString(TEST_POLICY_DOC))
+                    .build()
+            )
+            .build();
+
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenReturn(getDomainPermissionsPolicyResponse);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()

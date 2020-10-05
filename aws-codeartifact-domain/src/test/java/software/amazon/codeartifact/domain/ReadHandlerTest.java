@@ -9,6 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,8 +25,11 @@ import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
@@ -67,6 +72,10 @@ public class ReadHandlerTest extends AbstractTestBase {
 
     @Test
     public void handleRequest_simpleSuccess() {
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .build();
+
         final ReadHandler handler = new ReadHandler();
 
         DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
@@ -84,6 +93,7 @@ public class ReadHandlerTest extends AbstractTestBase {
             )
             .build();
 
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -110,6 +120,70 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
+    }
+
+    @Test
+    public void handleRequest_success_with_policy() throws JsonProcessingException {
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .build();
+
+        final ReadHandler handler = new ReadHandler();
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(
+                DomainDescription.builder()
+                    .name(DOMAIN_NAME)
+                    .owner(DOMAIN_OWNER)
+                    .arn(DOMAIN_ARN)
+                    .repositoryCount(REPO_COUNT)
+                    .assetSizeBytes((long) ASSET_SIZE)
+                    .status(STATUS)
+                    .createdTime(NOW)
+                    .encryptionKey(ENCRYPTION_KEY_ARN)
+                    .build()
+            )
+            .build();
+
+        GetDomainPermissionsPolicyResponse getDomainPermissionsPolicyResponse = GetDomainPermissionsPolicyResponse.builder()
+            .policy(
+                ResourcePolicy.builder()
+                .document(MAPPER.writeValueAsString(TEST_POLICY_DOC))
+                .build()
+            )
+            .build();
+
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenReturn(getDomainPermissionsPolicyResponse);
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .logicalResourceIdentifier(DOMAIN_ARN)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .owner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .arn(DOMAIN_ARN)
+            .permissionsPolicyDocument(TEST_POLICY_DOC)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
     }
 
 
@@ -167,6 +241,8 @@ public class ReadHandlerTest extends AbstractTestBase {
         DescribeDomainRequest describeDomainRequest = argumentCaptor.getValue();
         assertThat(describeDomainRequest.domain()).isEqualTo(DOMAIN_NAME);
         assertThat(describeDomainRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
+
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
     }
 
     @Test
