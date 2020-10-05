@@ -94,7 +94,6 @@
       "permissions": [
         "codeartifact:DescribeRepository",
         "codeartifact:GetRepositoryPermissionsPolicy"
-
       ]
     },
     "update": {
