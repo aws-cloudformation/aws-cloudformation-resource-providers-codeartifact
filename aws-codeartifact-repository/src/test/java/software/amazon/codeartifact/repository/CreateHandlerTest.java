@@ -117,11 +117,54 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .build();
 
-        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+    }
+
+    @Test
+    public void handleRequest_SimpleSuccess_callBackDelayInProgress() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .description(DESCRIPTION)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
         when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
@@ -130,12 +173,18 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
 
-        assertSuccess(response, desiredOutputModel);
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(10);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -179,7 +228,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .build();
 
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
-        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -187,12 +235,13 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
 
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
         assertSuccess(response, desiredOutputModel);
 
-        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -239,12 +288,6 @@ public class CreateHandlerTest extends AbstractTestBase {
             .awsAccountId(DOMAIN_OWNER)
             .build();
 
-        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
-            .repository(repositoryDescription)
-            .build();
-
-        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
-
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
@@ -252,12 +295,13 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
 
         assertSuccess(response, desiredOutputModel);
 
-        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
@@ -314,20 +358,19 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenReturn(getRepositoryPermissionsPolicyResponse);
 
-        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
-
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
             .build();
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
 
         assertSuccess(response, desiredOutputModel);
 
-        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
 
         ArgumentCaptor<PutRepositoryPermissionsPolicyRequest> putRepoPermissionsPolicyRequestArgumentCaptor
             = ArgumentCaptor.forClass(PutRepositoryPermissionsPolicyRequest.class);
@@ -388,12 +431,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .awsAccountId(DOMAIN_OWNER)
             .build();
 
-        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
-            .repository(repositoryDescription)
-            .build();
-
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
-        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -401,12 +439,13 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
 
         assertSuccess(response, desiredOutputModel);
 
-        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
@@ -439,12 +478,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .awsAccountId(DOMAIN_OWNER)
             .build();
 
-        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
-            .repository(repositoryDescription)
-            .build();
-
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
-        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
 
         DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
             .repository(repositoryDescription)
@@ -452,13 +486,14 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
-        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
-        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
-        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
