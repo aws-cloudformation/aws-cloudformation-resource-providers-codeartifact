@@ -30,6 +30,7 @@ Resources:
                 - "codeartifact:DeleteRepositoryPermissionsPolicy"
                 - "codeartifact:DescribeRepository"
                 - "codeartifact:DisassociateExternalConnection"
+                - "codeartifact:GetRepositoryPermissionsPolicy"
                 - "codeartifact:ListRepositories"
                 - "codeartifact:PutRepositoryPermissionsPolicy"
                 - "codeartifact:UpdateRepository"

@@ -92,7 +92,9 @@
     },
     "read": {
       "permissions": [
-        "codeartifact:DescribeRepository"
+        "codeartifact:DescribeRepository",
+        "codeartifact:GetRepositoryPermissionsPolicy"
+
       ]
     },
     "update": {

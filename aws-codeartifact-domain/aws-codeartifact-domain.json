@@ -66,7 +66,8 @@
     },
     "read": {
       "permissions": [
-        "codeartifact:DescribeDomain"
+        "codeartifact:DescribeDomain",
+        "codeartifact:GetDomainPermissionsPolicy"
       ]
     },
     "update": {
