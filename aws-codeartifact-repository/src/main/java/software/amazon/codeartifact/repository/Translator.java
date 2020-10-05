@@ -1,15 +1,20 @@
 package software.amazon.codeartifact.repository;
 
 import org.apache.commons.collections.CollectionUtils;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -28,6 +33,7 @@ import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesReques
 import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
+import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
@@ -37,6 +43,7 @@ import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
@@ -102,6 +109,20 @@ public class Translator {
   }
 
   /**
+   * Translates repositoryDescription to list of strings
+   * @param repositoryDescription repo description
+   * @return list of externalConnectionName strings
+   */
+  static List<String> translateToExternalConnectionsFromRepositoryExternalConnectionInfo(
+      final RepositoryDescription repositoryDescription
+  ) {
+    return streamOfOrEmpty(repositoryDescription.externalConnections())
+        .map(RepositoryExternalConnectionInfo::externalConnectionName)
+        .collect(Collectors.toList());
+  }
+
+
+  /**
    * Request to read a resource
    * @param model resource model
    * @return awsRequest the aws service request to describe a resource
@@ -132,10 +153,12 @@ public class Translator {
    * @param describeRepositoryResponse the aws service describe resource response
    * @return model resource model
    */
-  static ResourceModel translateFromReadResponse(final DescribeRepositoryResponse describeRepositoryResponse) {
+  static ResourceModel translateFromReadResponse(
+      final DescribeRepositoryResponse describeRepositoryResponse
+  ) {
+
     RepositoryDescription repositoryDescription = describeRepositoryResponse.repository();
     ResourceModelBuilder resourceModelBuilder = ResourceModel.builder()
-        // TODO add repositoryEndpoint
         .arn(repositoryDescription.arn())
         .description(repositoryDescription.description())
         .domainName(repositoryDescription.domainName())
@@ -145,7 +168,13 @@ public class Translator {
         .name(repositoryDescription.name());
 
     if (!CollectionUtils.isEmpty(repositoryDescription.upstreams())) {
-      resourceModelBuilder.upstreams(translateToUpstreamsFromRepoDescription(describeRepositoryResponse.repository()));
+      resourceModelBuilder.upstreams(translateToUpstreamsFromRepoDescription(repositoryDescription));
+    }
+
+    if (!CollectionUtils.isEmpty(repositoryDescription.externalConnections())) {
+      resourceModelBuilder.externalConnections(
+          translateToExternalConnectionsFromRepositoryExternalConnectionInfo(repositoryDescription)
+      );
     }
 
     return resourceModelBuilder.build();
@@ -192,10 +221,24 @@ public class Translator {
    * @return awsRequest the aws service request to describe a policy
    */
   static GetRepositoryPermissionsPolicyRequest translateToGetRepositoryPermissionsPolicy(final ResourceModel model) {
+
+    String domainName = model.getDomainName();
+    String domainOwner = model.getDomainOwner();
+    String repositoryName = model.getRepositoryName();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
+      // this happens when Ref or GetAtt are called
+      RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
+
+      domainName = repositoryArn.domainName();
+      domainOwner = repositoryArn.owner();
+      repositoryName = repositoryArn.repoName();
+    }
+
     return GetRepositoryPermissionsPolicyRequest.builder()
-        .domain(model.getDomainName())
-        .repository(model.getRepositoryName())
-        .domainOwner(model.getDomainOwner())
+        .domain(domainName)
+        .repository(repositoryName)
+        .domainOwner(domainOwner)
         .build();
   }
 
@@ -309,6 +352,17 @@ public class Translator {
         .orElseGet(Stream::empty);
   }
 
+  public static Map<String, Object> deserializePolicy(final String policy) {
+    if (StringUtils.isNullOrEmpty(policy)) {
+      return null;
+    }
+    try {
+      return MAPPER.readValue(policy, new TypeReference<HashMap<String,Object>>() {});
+    } catch (final IOException e) {
+      throw new CfnInternalFailureException(e);
+    }
+  }
+
   static void throwCfnException(final AwsServiceException exception, String operation, String repositoryName) {
     if (exception instanceof AccessDeniedException) {
       throw new CfnAccessDeniedException(exception);
@@ -330,5 +384,6 @@ public class Translator {
     }
     throw new CfnGeneralServiceException(exception);
   }
+
 
 }

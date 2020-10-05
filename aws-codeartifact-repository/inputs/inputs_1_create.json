@@ -10,12 +10,10 @@
       }
     ]
   },
-  "Upstreams": null,
   "ExternalConnections": [
     "public:npmjs"
   ],
   "RepositoryName": "repo-contract-test",
-  "DomainOwner": null,
   "Description": "description",
   "DomainName": "domain"
 }

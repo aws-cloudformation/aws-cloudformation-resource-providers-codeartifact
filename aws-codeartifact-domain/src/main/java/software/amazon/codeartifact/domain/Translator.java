@@ -1,12 +1,17 @@
 package software.amazon.codeartifact.domain;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.amazonaws.util.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -18,6 +23,7 @@ import software.amazon.awssdk.services.codeartifact.model.DeleteDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
+import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsResponse;
@@ -28,6 +34,7 @@ import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
@@ -78,11 +85,48 @@ public class Translator {
   }
 
   /**
+   * Request to get permissionsPolicy of the domain resource
+   * @param model resource model
+   * @return awsRequest the aws service request to describe a resource
+   */
+  static GetDomainPermissionsPolicyRequest translateGetDomainPermissionsPolicyRequest(final ResourceModel model) {
+    String domainName = model.getDomainName();
+    String domainOwner = model.getOwner();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null) {
+      // This is the case GetAtt or Ref is called on the resource
+      Arn domainArn = ArnUtils.fromArn(model.getArn());
+
+      domainName = domainArn.shortId();
+      domainOwner = domainArn.owner();
+    }
+    return GetDomainPermissionsPolicyRequest.builder()
+        .domain(domainName)
+        .domainOwner(domainOwner)
+        .build();
+  }
+
+  public static Map<String, Object> deserializePolicy(final String policy) {
+    if (StringUtils.isNullOrEmpty(policy)) {
+      return null;
+    }
+
+    try {
+      return MAPPER.readValue(policy, new TypeReference<HashMap<String,Object>>() {});
+    } catch (final IOException e) {
+      throw new CfnInternalFailureException(e);
+    }
+  }
+
+  /**
    * Translates resource object from sdk into a resource model
    * @param awsResponse the aws service describe resource response
    * @return model resource model
    */
-  static ResourceModel translateFromReadResponse(final DescribeDomainResponse awsResponse) {
+  static ResourceModel translateFromReadResponse(
+      final DescribeDomainResponse awsResponse
+  ) {
+
     DomainDescription domain = awsResponse.domain();
     return ResourceModel.builder()
         .encryptionKey(domain.encryptionKey())

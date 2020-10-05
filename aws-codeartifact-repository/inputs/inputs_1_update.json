@@ -10,8 +10,6 @@
       }
     ]
   },
-  "Upstreams": null,
-  "ExternalConnections": null,
   "Description": "description",
   "RepositoryName": "repo-contract-test",
   "DomainName": "domain"
