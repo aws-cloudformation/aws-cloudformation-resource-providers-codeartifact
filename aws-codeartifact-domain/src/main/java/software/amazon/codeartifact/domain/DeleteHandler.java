@@ -25,8 +25,7 @@ public class DeleteHandler extends BaseHandlerStd {
         this.logger = logger;
         ResourceModel model = request.getDesiredResourceState();
         // STEP 1.0 [initialize a proxy context]
-        ProgressEvent<ResourceModel, CallbackContext> deleteProgressEvent = proxy
-            .initiate("AWS-CodeArtifact-Domain::Delete", proxyClient, model, callbackContext)
+        return proxy.initiate("AWS-CodeArtifact-Domain::Delete", proxyClient, model, callbackContext)
             // STEP 1.1 [construct a body of a request]
             .translateToServiceRequest(Translator::translateToDeleteRequest)
             // STEP 1.2 [make an api call]
@@ -54,12 +53,8 @@ public class DeleteHandler extends BaseHandlerStd {
             })
             // STEP 2.3 [Stabilize to check if the resource got deleted]
             .stabilize((deleteDomainRequest, deleteDomainResponse, proxyInvocation, resourceModel, context) -> !doesDomainExist(model, proxyClient))
-            .success();
-
-
-        // according to the ResourceHandler contract we must not return the model in the response
-        deleteProgressEvent.setResourceModel(null);
-        return deleteProgressEvent;
+            // according to the ResourceHandler contract we must not return the model in the response
+            .done((awsRequest, response, client, resourceModel, context) -> ProgressEvent.success(null, context));
     }
 
 }
