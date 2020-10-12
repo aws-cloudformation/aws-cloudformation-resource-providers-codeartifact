@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "MyCodeArtifactDomain": {
+      "Type": "AWS::CodeArtifact::Domain",
+      "Properties": {
+        "DomainName": "my-domain"
+      }
+    }
+  }
+}

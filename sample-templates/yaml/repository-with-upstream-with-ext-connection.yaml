@@ -1,0 +1,19 @@
+Resources:
+  MyCodeArtifactDomain:
+    Type: 'AWS::CodeArtifact::Domain'
+    Properties:
+      DomainName: "my-domain"
+  MyCodeArtifactUpstreamRepository:
+    Type: 'AWS::CodeArtifact::Repository'
+    Properties:
+      RepositoryName: "my-upstream-repo"
+      DomainName: !GetAtt MyCodeArtifactDomain.Name
+      ExternalConnections:
+        - public:npmjs
+  MyCodeArtifactRepository:
+    Type: 'AWS::CodeArtifact::Repository'
+    Properties:
+      RepositoryName: "my-repo"
+      DomainName: !GetAtt MyCodeArtifactDomain.Name
+      Upstreams:
+        - !GetAtt MyCodeArtifactUpstreamRepository.Name

@@ -16,4 +16,4 @@ repos:
     - --no-sort-keys
   - id: check-merge-conflict
   - id: check-yaml
-    exclude: codebuild-ci.yaml
+    exclude: sample-templates/yaml/*
