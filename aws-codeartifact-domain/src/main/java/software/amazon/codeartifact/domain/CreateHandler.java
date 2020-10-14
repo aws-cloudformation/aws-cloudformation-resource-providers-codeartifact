@@ -47,7 +47,7 @@ public class CreateHandler extends BaseHandlerStd {
 
         if (callbackContext.isCreated()) {
             // This happens when handler gets called again during callback delay or the handler is retrying
-            // after repository was created already. This will prevent 409s on retry.
+            // after domain was created already. This will prevent 409s on retry.
             logger.log("Domain was already created, will not call CreateDomain again.");
             return ProgressEvent.progress(progress.getResourceModel(), callbackContext);
         }
