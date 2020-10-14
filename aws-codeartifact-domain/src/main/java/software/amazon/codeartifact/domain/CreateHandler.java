@@ -45,6 +45,7 @@ public class CreateHandler extends BaseHandlerStd {
     ) {
         CallbackContext callbackContext = progress.getCallbackContext();
 
+        logger.log(String.format("isCreatedFlag: %s", callbackContext.isCreated()));
         if (callbackContext.isCreated()) {
             // This happens when handler gets called again during callback delay or the handler is retrying
             // after domain was created already. This will prevent 409s on retry.
