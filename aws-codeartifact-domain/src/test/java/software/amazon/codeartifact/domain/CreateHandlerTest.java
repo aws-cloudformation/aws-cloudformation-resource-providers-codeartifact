@@ -137,6 +137,48 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_simpleSuccess_retried() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        when(proxyClient.client().getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        CallbackContext context = new CallbackContext();
+        context.setCreated(true);
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient, never()).createDomain(any(CreateDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient, times(1)).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+
+    }
+
+    @Test
     public void handleRequest_simpleSuccess_withEncryptionKey() {
         final CreateHandler handler = new CreateHandler();
 
