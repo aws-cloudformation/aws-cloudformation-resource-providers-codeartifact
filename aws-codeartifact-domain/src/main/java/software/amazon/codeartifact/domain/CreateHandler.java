@@ -14,6 +14,7 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 
 public class CreateHandler extends BaseHandlerStd {
+    private static final int CALLBACK_DELAY_SECONDS = 1;
     private Logger logger;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -57,7 +58,7 @@ public class CreateHandler extends BaseHandlerStd {
             .translateToServiceRequest(Translator::translateToCreateRequest)
             .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
             .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, callbackContext))
-            .progress();
+            .progress(CALLBACK_DELAY_SECONDS);
     }
 
     private CreateDomainResponse createDomainSdkCall(
