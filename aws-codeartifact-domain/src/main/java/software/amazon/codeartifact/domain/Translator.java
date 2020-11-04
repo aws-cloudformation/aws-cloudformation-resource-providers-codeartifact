@@ -2,10 +2,13 @@ package software.amazon.codeartifact.domain;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,18 +30,24 @@ import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPo
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListDomainsResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
+import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInternalFailureException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
+import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
 
 /**
  * This class is a centralized placeholder for
@@ -55,11 +64,28 @@ public class Translator {
    * @param model resource model
    * @return awsRequest the aws service request to create a resource
    */
-  static CreateDomainRequest translateToCreateRequest(final ResourceModel model) {
+  static CreateDomainRequest translateToCreateRequest(final ResourceModel model, final Map<String, String> tags) {
     return CreateDomainRequest.builder()
         .domain(model.getDomainName())
+        .tags(translateTagsToSdk(tags))
         .encryptionKey(model.getEncryptionKey())
         .build();
+  }
+
+  static Set<Tag> translateTagsToSdk(final Map<String, String> tags) {
+    if (tags == null) {
+      return Collections.emptySet();
+    }
+
+    return tags.entrySet()
+        .stream()
+        .map(tag ->
+            Tag.builder()
+                .key(tag.getKey())
+                .value(tag.getValue())
+                .build()
+        )
+        .collect(Collectors.toSet());
   }
 
   /**
@@ -116,6 +142,19 @@ public class Translator {
     } catch (final IOException e) {
       throw new CfnInternalFailureException(e);
     }
+  }
+
+  public static List<software.amazon.codeartifact.domain.Tag> fromListTagsResponse(final List<Tag> tags) {
+    if (CollectionUtils.isNullOrEmpty(tags)) {
+      return null;
+    }
+
+    return tags.stream()
+        .map(codeArtifactTag -> software.amazon.codeartifact.domain.Tag.builder()
+            .key(codeArtifactTag.key())
+            .value(codeArtifactTag.value())
+            .build()
+        ).collect(Collectors.toList());
   }
 
   /**
@@ -215,20 +254,76 @@ public class Translator {
 
 
   static void throwCfnException(final AwsServiceException exception, String operation, String domainName) {
-    if (exception instanceof AccessDeniedException)
+    if (exception instanceof AccessDeniedException) {
       throw new CfnAccessDeniedException(exception);
+    }
     if (exception instanceof ConflictException) {
         throw new CfnAlreadyExistsException(ResourceModel.TYPE_NAME, domainName, exception);
     }
-    if (exception instanceof ResourceNotFoundException)
+    if (exception instanceof ResourceNotFoundException) {
       throw new CfnNotFoundException(ResourceModel.TYPE_NAME, domainName, exception);
-    if (exception instanceof ServiceQuotaExceededException)
+    }
+    if (exception instanceof ServiceQuotaExceededException) {
       throw new CfnServiceLimitExceededException(ResourceModel.TYPE_NAME, exception.getMessage(), exception);
-    if (exception instanceof ValidationException)
+    }
+    if (exception instanceof ValidationException) {
       throw new CfnInvalidRequestException(exception);
-    if (exception instanceof InternalServerException)
-      throw new CfnGeneralServiceException(exception);
-    throw exception;
+    }
+    if (exception instanceof InternalServerException) {
+      throw new CfnServiceInternalErrorException(operation, exception);
+    }
+    throw new CfnGeneralServiceException(exception);
   }
 
+  static UntagResourceRequest untagResourceRequest(
+      ResourceHandlerRequest<ResourceModel> request,
+      List<Tag> tagsToRemove,
+      String domainName
+  ) {
+
+    String arn = ArnUtils.domainArn(
+        request.getAwsPartition(),
+        request.getRegion(),
+        request.getAwsAccountId(),
+        domainName)
+        .arn();
+
+    return UntagResourceRequest.builder()
+        .resourceArn(arn)
+        .tagKeys(
+            tagsToRemove.stream()
+                .map(Tag::key)
+                .collect(Collectors.toList())
+        )
+        .build();
+  }
+
+  static TagResourceRequest tagResourceRequest(
+      ResourceHandlerRequest<ResourceModel> request,
+      List<Tag> tagsToAdd,
+      String domainName
+  ) {
+
+    String arn = ArnUtils.domainArn(
+        request.getAwsPartition(),
+        request.getRegion(),
+        request.getAwsAccountId(),
+        domainName)
+        .arn();
+
+    return TagResourceRequest.builder()
+        .resourceArn(arn)
+        .tags(tagsToAdd)
+        .build();
+  }
+
+    static ListTagsForResourceRequest translateToListTagsRequest(
+        final ResourceModel model
+    ) {
+      return ListTagsForResourceRequest
+          .builder()
+          // arn has been populated by describeDomainCall
+          .resourceArn(model.getArn())
+          .build();
+    }
 }

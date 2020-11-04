@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
 import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
@@ -41,8 +42,8 @@ import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededEx
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -140,15 +141,65 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_simpleSuccess_with_tags() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .arn(DOMAIN_ARN)
+            .tags(RESOURCE_MODEL_TAGS)
+            .build();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .build();
+
+        CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        when(proxyClient.client().createDomain(any(CreateDomainRequest.class))).thenReturn(createDomainResponse);
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(1);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+
+        ArgumentCaptor<CreateDomainRequest> createDomainRequestArgumentCaptor = ArgumentCaptor.forClass(CreateDomainRequest.class);
+
+        verify(codeartifactClient).createDomain(createDomainRequestArgumentCaptor.capture());
+        CreateDomainRequest createDomainRequestValue = createDomainRequestArgumentCaptor.getValue();
+
+        verify(codeartifactClient, times(1)).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+
+        assertThat(createDomainRequestValue.tags().equals(SERVICE_TAGS));
+
+    }
+
+    @Test
     public void handleRequest_simpleSuccess_retried() {
         final CreateHandler handler = new CreateHandler();
 
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
-            .build();
-
-        CreateDomainResponse createDomainResponse = CreateDomainResponse.builder()
-            .domain(domainDescription)
             .build();
 
         DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
@@ -178,6 +229,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
         verify(codeartifactClient, times(1)).describeDomain(any(DescribeDomainRequest.class));
         verify(codeartifactClient, never()).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
 
     }
 
@@ -290,6 +342,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient, times(1)).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
 
         ArgumentCaptor<PutDomainPermissionsPolicyRequest> putDomainPermissionsPolicyRequestArgumentCaptor
             = ArgumentCaptor.forClass(PutDomainPermissionsPolicyRequest.class);
@@ -430,7 +483,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         try {
             final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
             fail("Expected Exception");
-        } catch (CfnGeneralServiceException e) {
+        } catch (CfnServiceInternalErrorException e) {
             //Expected
 
         }

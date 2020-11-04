@@ -29,7 +29,10 @@ Resources:
                 - "codeartifact:DescribeDomain"
                 - "codeartifact:GetDomainPermissionsPolicy"
                 - "codeartifact:ListDomains"
+                - "codeartifact:ListTagsForResource"
                 - "codeartifact:PutDomainPermissionsPolicy"
+                - "codeartifact:TagResource"
+                - "codeartifact:UntagResource"
                 Resource: "*"
 Outputs:
   ExecutionRoleArn:

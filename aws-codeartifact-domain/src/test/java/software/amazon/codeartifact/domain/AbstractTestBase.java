@@ -2,11 +2,14 @@ package software.amazon.codeartifact.domain;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.AwsResponse;
@@ -25,6 +28,8 @@ public class AbstractTestBase {
   protected static final String DOMAIN_NAME = "test-domain-name";
   protected static final String ENCRYPTION_KEY_ARN = "testKey/Arn";
   protected static final String DOMAIN_OWNER = "123456789";
+  protected static final String PARTITION = "aws";
+  protected static final String REGION = "us-west-2";
   protected static final String DOMAIN_ARN =
       String.format("arn:aws:codeartifact:region:%s:domain/%s", DOMAIN_OWNER, DOMAIN_NAME);
   protected static final Map<String, Object> TEST_POLICY_DOC = Collections.singletonMap("key0", "value0");
@@ -32,6 +37,17 @@ public class AbstractTestBase {
   protected final int REPO_COUNT = 2;
   protected final String STATUS = "Active";
   protected final int ASSET_SIZE = 1234;
+  protected final List<Tag> RESOURCE_MODEL_TAGS = ImmutableList.of(
+                    Tag.builder().key("key1").value("value1").build(),
+                    Tag.builder().key("key2").value("value2").build());
+
+  protected final Map<String, String> DESIRED_TAGS_MAP = ImmutableMap.of(
+      "key1","value1",
+      "key2","value2");
+
+  protected final List<software.amazon.awssdk.services.codeartifact.model.Tag> SERVICE_TAGS = ImmutableList.of(
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key1").value("value1").build(),
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key2").value("value2").build());
 
   public static final ObjectMapper MAPPER = new ObjectMapper();
 

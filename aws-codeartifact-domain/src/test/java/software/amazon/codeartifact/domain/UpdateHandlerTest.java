@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
+import java.util.Collections;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -27,10 +28,14 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse
 import software.amazon.awssdk.services.codeartifact.model.DomainDescription;
 import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetDomainPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutDomainPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -146,7 +151,131 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
         verify(codeartifactClient).putDomainPermissionsPolicy(any(PutDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+    }
 
+    @Test
+    public void handleRequest_addTags() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .build();
+
+        final ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        ListTagsForResourceResponse listTagsForResourceResponse = ListTagsForResourceResponse.builder()
+            .tags(SERVICE_TAGS)
+            .build();
+
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+            .thenReturn(listTagsForResourceResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .owner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .arn(DOMAIN_ARN)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).tagResource(any(TagResourceRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+    }
+
+    @Test
+    public void handleRequest_removeTags() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .build();
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class))).thenReturn(describeDomainResponse);
+
+        ListTagsForResourceResponse listTagsForResourceResponse = ListTagsForResourceResponse.builder()
+            .build();
+
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+            .thenReturn(listTagsForResourceResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .owner(DOMAIN_OWNER)
+            .name(DOMAIN_NAME)
+            .arn(DOMAIN_ARN)
+            .encryptionKey(ENCRYPTION_KEY_ARN)
+            .build();
+
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+        verify(codeartifactClient).getDomainPermissionsPolicy(any(GetDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).untagResource(any(UntagResourceRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -198,6 +327,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
 
         verify(codeartifactClient).deleteDomainPermissionsPolicy(any(DeleteDomainPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
 
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
