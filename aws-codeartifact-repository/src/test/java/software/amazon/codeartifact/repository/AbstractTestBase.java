@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,6 +45,18 @@ public class AbstractTestBase {
   protected final String UPSTREAM_1 = "upstream1";
   protected final String NPM_EC = "public:npmjs";
   protected final String PYPI_EC = "public:pypi";
+
+  protected final List<software.amazon.awssdk.services.codeartifact.model.Tag> SERVICE_TAGS = ImmutableList.of(
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key1").value("value1").build(),
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key2").value("value2").build()
+  );
+  protected final List<Tag> RESOURCE_MODEL_TAGS = ImmutableList.of(
+      Tag.builder().key("key1").value("value1").build(),
+      Tag.builder().key("key2").value("value2").build());
+
+  protected final Map<String, String> DESIRED_TAGS_MAP = ImmutableMap.of(
+      "key1","value1",
+      "key2","value2");
 
   protected final List<String> UPSTREAMS = Arrays.asList(UPSTREAM_0,UPSTREAM_1);
 

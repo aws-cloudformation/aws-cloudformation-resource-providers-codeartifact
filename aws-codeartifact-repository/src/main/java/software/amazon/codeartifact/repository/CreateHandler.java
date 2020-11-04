@@ -37,7 +37,7 @@ public class CreateHandler extends BaseHandlerStd {
         setPrimaryIdentifier(request, model);
 
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
-            .then(progress -> createRepository(proxy, progress, proxyClient))
+            .then(progress -> createRepository(proxy, request, progress, proxyClient))
             .then(progress -> putRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
             .then(progress -> associateExternalConnections(progress, callbackContext, request, proxyClient, externalConnectionsToAdd, logger))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
@@ -59,6 +59,7 @@ public class CreateHandler extends BaseHandlerStd {
 
     private ProgressEvent<ResourceModel, CallbackContext> createRepository(
         AmazonWebServicesClientProxy proxy,
+        ResourceHandlerRequest<ResourceModel> request,
         ProgressEvent<ResourceModel, CallbackContext> progress,
         ProxyClient<CodeartifactClient> proxyClient
     ) {
@@ -72,7 +73,7 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         return proxy.initiate("AWS-CodeArtifact-Repository::Create", proxyClient, progress.getResourceModel(), callbackContext)
-            .translateToServiceRequest(Translator::translateToCreateRequest)
+            .translateToServiceRequest((model) -> Translator.translateToCreateRequest(model, request.getDesiredResourceTags()))
             .makeServiceCall((awsRequest, client) -> {
                 AwsResponse awsResponse = null;
                 try {

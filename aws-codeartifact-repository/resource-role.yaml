@@ -32,7 +32,10 @@ Resources:
                 - "codeartifact:DisassociateExternalConnection"
                 - "codeartifact:GetRepositoryPermissionsPolicy"
                 - "codeartifact:ListRepositories"
+                - "codeartifact:ListTagsForResource"
                 - "codeartifact:PutRepositoryPermissionsPolicy"
+                - "codeartifact:TagResource"
+                - "codeartifact:UntagResource"
                 - "codeartifact:UpdateRepository"
                 Resource: "*"
 Outputs:

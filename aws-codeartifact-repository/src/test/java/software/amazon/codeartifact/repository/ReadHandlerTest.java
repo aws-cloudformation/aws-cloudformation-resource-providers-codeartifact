@@ -27,6 +27,8 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
@@ -104,6 +106,12 @@ public class ReadHandlerTest extends AbstractTestBase {
         when(proxyClient.client().getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class))).thenThrow(ResourceNotFoundException.class);
         when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
 
+        ListTagsForResourceResponse listTagsForResourceResponse = ListTagsForResourceResponse.builder()
+            .build();
+
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+            .thenReturn(listTagsForResourceResponse);
+
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .logicalResourceIdentifier(REPO_ARN)
@@ -121,6 +129,7 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -170,6 +179,7 @@ public class ReadHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
 
@@ -214,6 +224,59 @@ public class ReadHandlerTest extends AbstractTestBase {
         assertThat(describeRepositoryRequest.domainOwner()).isEqualTo(DOMAIN_OWNER);
 
         verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+    }
+
+    @Test
+    public void handleRequest_success_with_tags() {
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .arn(REPO_ARN)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .name(REPO_NAME)
+            .description(DESCRIPTION)
+            .build();
+
+        final ReadHandler handler = new ReadHandler();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        ListTagsForResourceResponse listTagsForResourceResponse = ListTagsForResourceResponse.builder()
+            .tags(SERVICE_TAGS)
+            .build();
+
+        when(proxyClient.client().listTagsForResource(any(ListTagsForResourceRequest.class)))
+            .thenReturn(listTagsForResourceResponse);
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
