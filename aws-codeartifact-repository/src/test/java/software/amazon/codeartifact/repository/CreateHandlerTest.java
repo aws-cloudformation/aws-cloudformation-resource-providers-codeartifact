@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
@@ -132,6 +133,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -189,6 +191,81 @@ public class CreateHandlerTest extends AbstractTestBase {
     }
 
     @Test
+    public void handleRequest_SimpleSuccess_callBackDelayInProgress_withTags() {
+        final CreateHandler handler = new CreateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .build();
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .region(REGION)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        CreateRepositoryResponse createRepositoryResponse = CreateRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().createRepository(any(CreateRepositoryRequest.class))).thenReturn(createRepositoryResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        CallbackContext context = new CallbackContext();
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, context, proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.IN_PROGRESS);
+        assertThat(response.getResourceModel()).isEqualTo(desiredOutputModel);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(10);
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).createRepository(any(CreateRepositoryRequest.class));
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+
+
+        ArgumentCaptor<CreateRepositoryRequest> createRepositoryRequestArgumentCaptor =
+            ArgumentCaptor.forClass(CreateRepositoryRequest.class);
+
+        verify(codeartifactClient).createRepository(createRepositoryRequestArgumentCaptor.capture());
+        CreateRepositoryRequest createRepositoryRequestValue = createRepositoryRequestArgumentCaptor.getValue();
+
+        verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+
+        assertThat(createRepositoryRequestValue.tags().equals(SERVICE_TAGS));
+    }
+
+    @Test
     public void handleRequest_SimpleSuccess_withoutDomainOwner() {
         final CreateHandler handler = new CreateHandler();
 
@@ -242,6 +319,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -303,6 +381,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -383,6 +462,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(capturedRequest.policyDocument()).isEqualTo(MAPPER.writeValueAsString(TEST_POLICY_DOC_0));
 
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 
@@ -448,6 +528,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -495,6 +576,7 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient, times(1)).describeRepository(any(DescribeRepositoryRequest.class));
         verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, atLeastOnce()).serviceName();
     }
 

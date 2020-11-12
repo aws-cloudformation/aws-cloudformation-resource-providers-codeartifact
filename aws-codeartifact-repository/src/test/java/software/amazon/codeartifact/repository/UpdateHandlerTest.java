@@ -1,5 +1,6 @@
 package software.amazon.codeartifact.repository;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,11 +19,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
@@ -33,10 +36,13 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
@@ -73,6 +79,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
         proxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         codeartifactClient = mock(CodeartifactClient.class);
         proxyClient = MOCK_PROXY(proxy, codeartifactClient);
+    }
+
+    @AfterEach
+    public void tear_down() {
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(codeartifactClient);
     }
 
     @Test
@@ -121,6 +133,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
     }
 
@@ -171,7 +185,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
         verify(codeartifactClient).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -209,6 +225,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class));
     }
 
@@ -268,6 +286,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
     }
 
@@ -325,6 +345,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(updateRepositoryRequestArgumentCaptor.capture());
 
         UpdateRepositoryRequest updateRepositoryRequest = updateRepositoryRequestArgumentCaptor.getValue();
@@ -393,6 +415,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
 
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
@@ -466,6 +491,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         //Should first remove upstreams then add external connections
         InOrder inOrderVerifier = inOrder(codeartifactClient);
 
@@ -541,6 +569,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         //Should first remove upstreams then add external connections
 
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
@@ -616,10 +647,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
-
-
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
-
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
@@ -688,6 +718,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         InOrder inOrderVerifier = inOrder(codeartifactClient);
 
         // verify first remove externalConnections then add external connections
@@ -772,6 +805,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
@@ -834,6 +870,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, expectedOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
         verify(codeartifactClient).disassociateExternalConnection(any(DisassociateExternalConnectionRequest.class));
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
@@ -848,7 +887,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .externalConnections(Arrays.asList(NPM_EC, PYPI_EC))
-            .description(DESCRIPTION)
             .build();
 
         // describe repo response has no external connections, we need to add the one in the ResourceModel
@@ -870,7 +908,150 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
+    }
+
+    @Test
+    public void handleRequest_addTags() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).tagResource(any(TagResourceRequest.class));
+    }
+
+    @Test
+    public void handleRequest_addTags_withOutDomainOwner() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).tagResource(any(TagResourceRequest.class));
+    }
+
+    @Test
+    public void handleRequest_removeTags() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN)
+            .description(DESCRIPTION)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(DOMAIN_OWNER)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).untagResource(any(UntagResourceRequest.class));
     }
 
     RepositoryDescription RepoInfoWithOutExternalConnections() {

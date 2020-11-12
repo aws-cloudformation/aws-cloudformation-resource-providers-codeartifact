@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.codeartifact.model.ValidationException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
+import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -39,7 +40,7 @@ public class ListHandler extends BaseHandler<CallbackContext> {
         } catch (ValidationException e) {
             throw new CfnInvalidRequestException(e);
         } catch (InternalServerException e) {
-            throw new CfnGeneralServiceException(e);
+            throw new CfnServiceInternalErrorException(e);
         }
 
         // STEP 3 [get a token for the next page]

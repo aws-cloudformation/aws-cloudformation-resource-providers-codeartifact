@@ -55,7 +55,7 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient,progress.getResourceModel(), progress.getCallbackContext())
-            .translateToServiceRequest(Translator::translateToCreateRequest)
+            .translateToServiceRequest((model) -> Translator.translateToCreateRequest(model, request.getDesiredResourceTags()))
             .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
             .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, callbackContext))
             .progress(CALLBACK_DELAY_SECONDS);
@@ -74,7 +74,7 @@ public class CreateHandler extends BaseHandlerStd {
             Translator.throwCfnException(e, Constants.CREATE_DOMAIN, domainName);
         }
 
-        logger.log(String.format("%s successfully created.", ResourceModel.TYPE_NAME));
+        logger.log(String.format("%s [%s] Created Successfully", ResourceModel.TYPE_NAME, domainName));
         return awsResponse;
     }
 
