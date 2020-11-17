@@ -98,7 +98,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -112,7 +112,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -157,7 +157,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -206,7 +206,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .tags(RESOURCE_MODEL_TAGS)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .build();
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
@@ -219,7 +219,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -280,7 +280,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -294,7 +294,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -341,7 +341,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .build();
@@ -349,7 +349,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .upstreams(
                 UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_0).build(),
@@ -400,7 +400,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -412,7 +412,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -481,7 +481,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -500,7 +500,7 @@ public class CreateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .externalConnections(Collections.singletonList(NPM_EC))
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -546,7 +546,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)

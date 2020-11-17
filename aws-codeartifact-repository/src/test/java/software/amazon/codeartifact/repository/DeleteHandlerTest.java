@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryResponse;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
@@ -56,7 +55,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
     private final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
         .name(REPO_NAME)
         .administratorAccount(ADMIN_ACCOUNT)
-        .arn(REPO_ARN)
+        .arn(REPO_ARN_WITH_DOMAIN_OWNER)
         .description(DESCRIPTION)
         .domainOwner(DOMAIN_OWNER)
         .domainName(DOMAIN_NAME)
