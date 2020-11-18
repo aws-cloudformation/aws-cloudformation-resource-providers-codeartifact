@@ -34,8 +34,8 @@ public class AbstractTestBase {
   protected static final String DOMAIN_OWNER = "12345";
   protected static final String ADMIN_ACCOUNT = "54321";
   protected static final String REPO_NAME = "test-repo-name";
-  protected static final String REPO_ARN = String.format("arn:aws:codeartifact:%s:%s:repository/%s/%s",
-      REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+  protected static final String REPO_ARN_WITH_DOMAIN_OWNER = getExpectedRepoArn(REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+
   protected static final Map<String, Object> TEST_POLICY_DOC_0 = Collections.singletonMap("key0", "value0");
   protected static final Map<String, Object> TEST_POLICY_DOC_1 = Collections.singletonMap("key1", "value1");
 
@@ -108,6 +108,17 @@ public class AbstractTestBase {
         return sdkClient;
       }
     };
+  }
+
+
+  protected static String getExpectedRepoArn(
+      String region,
+      String domainOwner,
+      String domainName,
+      String repoName
+  ) {
+    return String.format("arn:aws:codeartifact:%s:%s:repository/%s/%s",
+        region, domainOwner, domainName, repoName);
   }
 
   protected void assertSuccess(

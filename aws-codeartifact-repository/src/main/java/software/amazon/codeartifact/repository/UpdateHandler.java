@@ -8,9 +8,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import software.amazon.awssdk.awscore.AwsResponse;
@@ -19,6 +16,7 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
 import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
@@ -28,7 +26,6 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
-import software.amazon.awssdk.services.codeartifact.model.Tag;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;
@@ -67,7 +64,7 @@ public class UpdateHandler extends BaseHandlerStd {
         }
         return updateRepositoryConnectionsEvent
             .then(progress -> updateRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
-            .then(progress -> updateTags(proxy, proxyClient, progress, desiredModel.getRepositoryName(), desiredModel.getDomainName(), request))
+            .then(progress -> updateTags(proxy, proxyClient, progress, desiredModel, request))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
     }
 
@@ -75,10 +72,12 @@ public class UpdateHandler extends BaseHandlerStd {
         final AmazonWebServicesClientProxy proxy,
         final ProxyClient<CodeartifactClient> proxyClient,
         final ProgressEvent<ResourceModel, CallbackContext> progress,
-        String repositoryName,
-        String domainName,
+        ResourceModel desiredModel,
         final ResourceHandlerRequest<ResourceModel> request
     ) {
+        String repositoryName = desiredModel.getRepositoryName();
+        String domainName = desiredModel.getDomainName();
+
         // TODO(jonjara): move this to shared module
         Map<String, String> desiredResourceTags = request.getDesiredResourceTags();
         Map<String, String> previousResourceTags = request.getPreviousResourceTags();
@@ -92,11 +91,15 @@ public class UpdateHandler extends BaseHandlerStd {
         final List<Tag> tagsToRemove = new ArrayList<>(setTagsToRemove);
         final List<Tag> tagsToAdd = new ArrayList<>(setTagsToAdd);
 
+        String domainOwner = desiredModel.getDomainOwner() == null ?
+            request.getAwsAccountId() :
+            desiredModel.getDomainOwner();
+
         try {
             // Deletes tags only if tagsToRemove is not empty.
             if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
                 UntagResourceRequest untagRequest
-                    = Translator.untagResourceRequest(request, tagsToRemove, repositoryName, domainName);
+                    = Translator.untagResourceRequest(request, tagsToRemove, repositoryName, domainName, domainOwner);
                 proxy.injectCredentialsAndInvokeV2(untagRequest, proxyClient.client()::untagResource);
             }
         } catch (AwsServiceException e) {
@@ -107,7 +110,7 @@ public class UpdateHandler extends BaseHandlerStd {
             // Adds tags only if tagsToAdd is not empty.
             if (!CollectionUtils.isNullOrEmpty(tagsToAdd)) {
                 TagResourceRequest tagRequest
-                    = Translator.tagResourceRequest(request, tagsToAdd, repositoryName, domainName, request.getDesiredResourceState());
+                    = Translator.tagResourceRequest(request, tagsToAdd, repositoryName, domainName, domainOwner);
                 proxy.injectCredentialsAndInvokeV2(tagRequest, proxyClient.client()::tagResource);
             }
         } catch (AwsServiceException e) {

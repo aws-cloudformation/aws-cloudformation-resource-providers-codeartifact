@@ -36,12 +36,14 @@ import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
 import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
+import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
@@ -52,8 +54,6 @@ import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorExceptio
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.codeartifact.repository.ResourceModel.ResourceModelBuilder;
-import software.amazon.awssdk.services.codeartifact.model.Tag;
-import software.amazon.awssdk.utils.CollectionUtils;
 
 /**
  * This class is a centralized placeholder for
@@ -101,13 +101,14 @@ public class Translator {
       ResourceHandlerRequest<ResourceModel> request,
       List<Tag> tagsToRemove,
       String repositoryName,
-      String domainName
+      String domainName,
+      String domainOwner
   ) {
 
     String arn = ArnUtils.repoArn(
         request.getAwsPartition(),
         request.getRegion(),
-        request.getAwsAccountId(),
+        domainOwner,
         domainName,
         repositoryName)
         .arn();
@@ -127,10 +128,8 @@ public class Translator {
       List<Tag> tagsToAdd,
       String repositoryName,
       String domainName,
-      ResourceModel model
+      String domainOwner
   ) {
-
-    String domainOwner = model.getDomainOwner() == null ? request.getAwsAccountId() : model.getDomainOwner();
 
     String arn = ArnUtils.repoArn(
         request.getAwsPartition(),
