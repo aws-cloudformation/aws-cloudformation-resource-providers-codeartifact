@@ -4,8 +4,8 @@ import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
@@ -41,8 +41,10 @@ public class DeleteHandler extends BaseHandlerStd {
                 try {
                     awsResponse = client.injectCredentialsAndInvokeV2(awsRequest, proxyClient.client()::deleteDomain);
                 } catch (final ConflictException e) {
-                    // this happens if the domain has repositories in the account
-                    throw new CfnResourceConflictException(ResourceModel.TYPE_NAME, model.getDomainName(), e.getMessage(), e);
+                    // We are not wrapping in CfnResourceConflictException because this case is a result of domain
+                    // deletion failing because there are repositories in the account. CfnResourceConflictException
+                    // retries until it logs an internal service exception, so we rather just fast fail in this case.
+                    throw new CfnInvalidRequestException(e);
                 } catch (final AwsServiceException e) {
                     String domainName = model.getDomainName();
                     Translator.throwCfnException(e, Constants.DELETE_DOMAIN, domainName);
