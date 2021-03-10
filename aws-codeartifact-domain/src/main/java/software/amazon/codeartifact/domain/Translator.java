@@ -98,7 +98,7 @@ public class Translator {
     String domainOwner = model.getOwner();
 
     if (model.getArn() != null && domainName == null && domainOwner == null) {
-      // This is the case GetAtt or Ref is called on the resource
+      // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
       Arn domainArn = ArnUtils.fromArn(model.getArn());
 
       domainName = domainArn.shortId();
@@ -120,7 +120,7 @@ public class Translator {
     String domainOwner = model.getOwner();
 
     if (model.getArn() != null && domainName == null && domainOwner == null) {
-      // This is the case GetAtt or Ref is called on the resource
+      // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
       Arn domainArn = ArnUtils.fromArn(model.getArn());
 
       domainName = domainArn.shortId();
