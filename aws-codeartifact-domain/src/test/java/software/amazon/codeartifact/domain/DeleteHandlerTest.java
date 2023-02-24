@@ -272,4 +272,47 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
     }
+
+    @Test
+    public void handleRequest_simpleSuccess_onlyArn() {
+        final DeleteHandler handler = new DeleteHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .arn(DOMAIN_ARN)
+            .build();
+
+        DeleteDomainResponse deleteDomainResponse = DeleteDomainResponse.builder()
+            .build();
+
+        when(proxyClient.client().deleteDomain(any(DeleteDomainRequest.class))).thenReturn(deleteDomainResponse);
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        // first, when checking if domain exists to be deleted
+        // second, to check if domain has been deleted
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class)))
+            .thenReturn(describeDomainResponse)
+            .thenThrow(ResourceNotFoundException.class);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .logicalResourceIdentifier(DOMAIN_ARN)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNull();
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).deleteDomain(any(DeleteDomainRequest.class));
+        verify(codeartifactClient, times(2)).describeDomain(any(DescribeDomainRequest.class));
+
+    }
 }

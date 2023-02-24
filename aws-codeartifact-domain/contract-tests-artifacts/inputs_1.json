@@ -1,0 +1,23 @@
+{
+  "CreateInputs": {
+    "DomainName": "create-contract-domain",
+    "PermissionsPolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "codeartifact:*",
+          "Resource": "*"
+        }
+      ]
+    },
+    "Tags": [
+      {
+        "Key": "key1",
+        "Value": "val1"
+      }
+    ]
+  },
+  "PatchInputs": []
+}
