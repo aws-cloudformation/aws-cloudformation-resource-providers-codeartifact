@@ -182,8 +182,16 @@ public class Translator {
    * @return awsRequest the aws service request to delete a resource
    */
   static DeleteDomainRequest translateToDeleteRequest(final ResourceModel model) {
+
+    String domainName = model.getDomainName();
+
+    if (model.getArn() != null && domainName == null) {
+      Arn domainArn = ArnUtils.fromArn(model.getArn());
+      domainName = domainArn.shortId();
+    }
+
     return DeleteDomainRequest.builder()
-        .domain(model.getDomainName())
+        .domain(domainName)
         .build();
   }
 
