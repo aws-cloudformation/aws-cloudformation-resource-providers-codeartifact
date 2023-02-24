@@ -272,7 +272,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
     }
-    
+
     @Test
     public void handleRequest_simpleSuccess_onlyArn() {
         final DeleteHandler handler = new DeleteHandler();
