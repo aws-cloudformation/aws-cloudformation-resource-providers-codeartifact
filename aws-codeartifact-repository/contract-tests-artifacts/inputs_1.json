@@ -1,0 +1,28 @@
+{
+  "CreateInputs": {
+    "PermissionsPolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "codeartifact:*",
+          "Resource": "*"
+        }
+      ]
+    },
+    "RepositoryName": "repo-contract-test",
+    "Description": "repo for contract test",
+    "DomainName": "{{awscodeartifactrepositorycto1}}",
+    "Tags": [
+      {
+        "Key": "key1",
+        "Value": "val1"
+      }
+    ],
+    "Upstreams": [
+      "{{awscodeartifactrepositorycto2}}"
+    ]
+  },
+  "PatchInputs": []
+}

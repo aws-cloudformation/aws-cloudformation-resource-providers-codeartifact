@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Nothing to do in the pre_build phase...
+  build:
+    commands:
+      - echo Build started on `date`
+      - aws cloudformation create-stack --stack-name repository-ctv2-prescript --template-body file://prescript.yml
+      - aws cloudformation wait stack-create-complete --stack-name repository-ctv2-prescript
+      - echo "Created stack repository-ctv2-pre-script"
+      - aws cloudformation list-exports | jq -r '.'
+  post_build:
+    commands:
+      - echo Build completed on `date`

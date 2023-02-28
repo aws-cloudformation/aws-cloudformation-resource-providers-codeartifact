@@ -341,10 +341,23 @@ public class Translator {
    * @return awsRequest the aws service request to delete a resource
    */
   static DeleteRepositoryRequest translateToDeleteRequest(final ResourceModel model) {
+    String domainName = model.getDomainName();
+    String domainOwner = model.getDomainOwner();
+    String repositoryName = model.getRepositoryName();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
+      // this happens when Ref or GetAtt are called
+      RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
+
+      domainName = repositoryArn.domainName();
+      domainOwner = repositoryArn.owner();
+      repositoryName = repositoryArn.repoName();
+    }
+
     return DeleteRepositoryRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
-        .repository(model.getRepositoryName())
+        .domain(domainName)
+        .domainOwner(domainOwner)
+        .repository(repositoryName)
         .build();
   }
 

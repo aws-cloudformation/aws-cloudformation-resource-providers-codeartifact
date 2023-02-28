@@ -1,0 +1,34 @@
+{
+  "CreateInputs": {
+    "PermissionsPolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "codeartifact:*",
+          "Resource": "*"
+        }
+      ]
+    },
+    "ExternalConnections": [
+      "public:npmjs"
+    ],
+    "RepositoryName": "repo-contract-test-2",
+    "Description": "repo-2 for contract test",
+    "DomainName": "{{awscodeartifactrepositorycto1}}",
+    "Tags": [
+      {
+        "Key": "key1",
+        "Value": "val1"
+      }
+    ]
+  },
+  "PatchInputs": [
+    {
+      "op": "replace",
+      "path": "/ExternalConnections",
+      "value": []
+    }
+  ]
+}
