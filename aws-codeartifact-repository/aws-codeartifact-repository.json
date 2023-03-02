@@ -105,6 +105,7 @@
   ],
   "readOnlyProperties": [
     "/properties/Name",
+    "/properties/DomainName",
     "/properties/DomainOwner",
     "/properties/Arn"
   ],
