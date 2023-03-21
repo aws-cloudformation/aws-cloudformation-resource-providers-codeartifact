@@ -5,6 +5,7 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
@@ -87,22 +88,26 @@ public class CreateHandler extends BaseHandlerStd {
         final ProxyClient<CodeartifactClient> proxyClient,
         CallbackContext callbackContext
     ) {
-        DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
-            Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
+        try {
+            DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
+                Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
 
-        String domainStatus = describeDomainResponse.domain()
-            .status()
-            .toString();
+            String domainStatus = describeDomainResponse.domain()
+                .status()
+                .toString();
 
-        model.setArn(describeDomainResponse.domain().arn());
-        logger.log(String.format("Status of domain: %s", domainStatus));
+            model.setArn(describeDomainResponse.domain().arn());
+            logger.log(String.format("Status of domain: %s", domainStatus));
 
-        if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
-            logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
-            callbackContext.setCreated(true);
-            return true;
+            if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
+                logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
+                callbackContext.setCreated(true);
+                return true;
+            }
+
+        } catch (ResourceNotFoundException ex) {
+            // This exception means the resource has not stabilized
         }
-
         return false;
     }
 
