@@ -22,7 +22,7 @@
     <dependency>
       <groupId>software.amazon.cloudformation</groupId>
       <artifactId>aws-cloudformation-rpdk-java-plugin</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.9</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
     <dependency>
@@ -66,17 +66,17 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>codeartifact</artifactId>
-      <version>2.13.59</version>
+      <version>2.15.20</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sdk-core</artifactId>
-      <version>2.13.59</version>
+      <version>2.15.20</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>utils</artifactId>
-      <version>2.13.59</version>
+      <version>2.15.20</version>
     </dependency>
     <dependency>
       <groupId>org.immutables</groupId>

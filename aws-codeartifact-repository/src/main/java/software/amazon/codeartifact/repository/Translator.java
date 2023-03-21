@@ -1,6 +1,5 @@
 package software.amazon.codeartifact.repository;
 
-import org.apache.commons.collections.CollectionUtils;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,15 +30,20 @@ import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissio
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
 import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesRequest;
 import software.amazon.awssdk.services.codeartifact.model.ListRepositoriesResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepositoryInfo;
 import software.amazon.awssdk.services.codeartifact.model.ValidationException;
+import software.amazon.awssdk.utils.CollectionUtils;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
 import software.amazon.cloudformation.exceptions.CfnAlreadyExistsException;
 import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
@@ -48,6 +52,7 @@ import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
+import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.codeartifact.repository.ResourceModel.ResourceModelBuilder;
 
 /**
@@ -65,14 +70,102 @@ public class Translator {
    * @param model resource model
    * @return awsRequest the aws service request to create a resource
    */
-  static CreateRepositoryRequest translateToCreateRequest(final ResourceModel model) {
+  static CreateRepositoryRequest translateToCreateRequest(final ResourceModel model, final Map<String, String> tags) {
     return CreateRepositoryRequest.builder()
         .domain(model.getDomainName())
         .domainOwner(model.getDomainOwner())
+        .tags(translateTagsToSdk(tags))
         .upstreams(translateToUpstreamList(model))
         .repository(model.getRepositoryName())
         .description(model.getDescription())
         .build();
+  }
+
+  static Set<Tag> translateTagsToSdk(final Map<String, String> tags) {
+    if (tags == null) {
+      return Collections.emptySet();
+    }
+
+    return tags.entrySet()
+        .stream()
+        .map(tag ->
+            Tag.builder()
+                .key(tag.getKey())
+                .value(tag.getValue())
+                .build()
+        )
+        .collect(Collectors.toSet());
+  }
+
+  static UntagResourceRequest untagResourceRequest(
+      ResourceHandlerRequest<ResourceModel> request,
+      List<Tag> tagsToRemove,
+      String repositoryName,
+      String domainName,
+      String domainOwner
+  ) {
+
+    String arn = ArnUtils.repoArn(
+        request.getAwsPartition(),
+        request.getRegion(),
+        domainOwner,
+        domainName,
+        repositoryName)
+        .arn();
+
+    return UntagResourceRequest.builder()
+        .resourceArn(arn)
+        .tagKeys(
+            tagsToRemove.stream()
+                .map(Tag::key)
+                .collect(Collectors.toList())
+        )
+        .build();
+  }
+
+  static TagResourceRequest tagResourceRequest(
+      ResourceHandlerRequest<ResourceModel> request,
+      List<Tag> tagsToAdd,
+      String repositoryName,
+      String domainName,
+      String domainOwner
+  ) {
+
+    String arn = ArnUtils.repoArn(
+        request.getAwsPartition(),
+        request.getRegion(),
+        domainOwner,
+        domainName,
+        repositoryName)
+        .arn();
+
+    return TagResourceRequest.builder()
+        .resourceArn(arn)
+        .tags(tagsToAdd)
+        .build();
+  }
+
+  static ListTagsForResourceRequest translateToListTagsRequest(
+      final ResourceModel model
+  ) {
+    return ListTagsForResourceRequest
+        .builder()
+        // arn has been populated by describeRepositoryCall
+        .resourceArn(model.getArn())
+        .build();
+  }
+
+  public static List<software.amazon.codeartifact.repository.Tag> fromListTagsResponse(final List<Tag> tags) {
+    if (CollectionUtils.isNullOrEmpty(tags)) {
+      return null;
+    }
+
+    return tags.stream()
+        .map(codeArtifactTag -> software.amazon.codeartifact.repository.Tag.builder()
+            .key(codeArtifactTag.key())
+            .value(codeArtifactTag.value())
+            .build())
+        .collect(Collectors.toList());
   }
 
   /**
@@ -133,7 +226,7 @@ public class Translator {
     String repositoryName = model.getRepositoryName();
 
     if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
-        // this happens when Ref or GetAtt are called
+        // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
         RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
 
         domainName = repositoryArn.domainName();
@@ -167,11 +260,11 @@ public class Translator {
         .repositoryName(repositoryDescription.name())
         .name(repositoryDescription.name());
 
-    if (!CollectionUtils.isEmpty(repositoryDescription.upstreams())) {
+    if (!CollectionUtils.isNullOrEmpty(repositoryDescription.upstreams())) {
       resourceModelBuilder.upstreams(translateToUpstreamsFromRepoDescription(repositoryDescription));
     }
 
-    if (!CollectionUtils.isEmpty(repositoryDescription.externalConnections())) {
+    if (!CollectionUtils.isNullOrEmpty(repositoryDescription.externalConnections())) {
       resourceModelBuilder.externalConnections(
           translateToExternalConnectionsFromRepositoryExternalConnectionInfo(repositoryDescription)
       );
@@ -227,7 +320,7 @@ public class Translator {
     String repositoryName = model.getRepositoryName();
 
     if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
-      // this happens when Ref or GetAtt are called
+      // This case happens when ReadHandler is called using *only* the primaryIdentifier (Arn)
       RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
 
       domainName = repositoryArn.domainName();
@@ -248,10 +341,23 @@ public class Translator {
    * @return awsRequest the aws service request to delete a resource
    */
   static DeleteRepositoryRequest translateToDeleteRequest(final ResourceModel model) {
+    String domainName = model.getDomainName();
+    String domainOwner = model.getDomainOwner();
+    String repositoryName = model.getRepositoryName();
+
+    if (model.getArn() != null && domainName == null && domainOwner == null && repositoryName == null) {
+      // this happens when Ref or GetAtt are called
+      RepositoryArn repositoryArn = ArnUtils.fromArn(model.getArn());
+
+      domainName = repositoryArn.domainName();
+      domainOwner = repositoryArn.owner();
+      repositoryName = repositoryArn.repoName();
+    }
+
     return DeleteRepositoryRequest.builder()
-        .domain(model.getDomainName())
-        .domainOwner(model.getDomainOwner())
-        .repository(model.getRepositoryName())
+        .domain(domainName)
+        .domainOwner(domainOwner)
+        .repository(repositoryName)
         .build();
   }
 

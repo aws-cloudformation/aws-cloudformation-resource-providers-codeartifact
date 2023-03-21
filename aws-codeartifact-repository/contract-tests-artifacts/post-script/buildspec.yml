@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Delay 10 seconds to delete repositories
+      - sleep 10
+  build:
+    commands:
+      - echo Build started on `date`
+      - aws cloudformation delete-stack --stack-name repository-ctv2-prescript
+      - aws cloudformation wait stack-delete-complete --stack-name repository-ctv2-prescript
+      - echo "Deleted stack repository-ctv2-prescript"
+  post_build:
+    commands:
+      - echo Build completed on `date`

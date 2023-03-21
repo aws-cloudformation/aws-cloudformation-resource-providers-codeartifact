@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.codeartifact.model.AccessDeniedException;
 import software.amazon.awssdk.services.codeartifact.model.ConflictException;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryResponse;
-import software.amazon.awssdk.services.codeartifact.model.DescribeDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.InternalServerException;
@@ -56,7 +55,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
     private final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
         .name(REPO_NAME)
         .administratorAccount(ADMIN_ACCOUNT)
-        .arn(REPO_ARN)
+        .arn(REPO_ARN_WITH_DOMAIN_OWNER)
         .description(DESCRIPTION)
         .domainOwner(DOMAIN_OWNER)
         .domainName(DOMAIN_NAME)
@@ -76,6 +75,48 @@ public class DeleteHandlerTest extends AbstractTestBase {
         final ResourceModel model = ResourceModel.builder()
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
+            .build();
+
+        DeleteRepositoryResponse deleteDomainResponse = DeleteRepositoryResponse.builder()
+            .build();
+
+        when(proxyClient.client().deleteRepository(any(DeleteRepositoryRequest.class))).thenReturn(deleteDomainResponse);
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        // first, when checking if domain exists to be deleted
+        // second, to check if domain has been deleted
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class)))
+            .thenReturn(describeRepositoryResponse)
+            .thenThrow(ResourceNotFoundException.class);
+
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNull();
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).deleteRepository(any(DeleteRepositoryRequest.class));
+        verify(codeartifactClient, times(2)).describeRepository(any(DescribeRepositoryRequest.class));
+    }
+
+    @Test
+    public void handleRequest_simpleSuccess_onlyArn() {
+        final DeleteHandler handler = new DeleteHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .build();
 
         DeleteRepositoryResponse deleteDomainResponse = DeleteRepositoryResponse.builder()

@@ -1,5 +1,6 @@
 package software.amazon.codeartifact.repository;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,11 +19,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
@@ -33,10 +36,13 @@ import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResp
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.PutRepositoryPermissionsPolicyRequest;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryDescription;
 import software.amazon.awssdk.services.codeartifact.model.RepositoryExternalConnectionInfo;
 import software.amazon.awssdk.services.codeartifact.model.ResourcePolicy;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryRequest;
 import software.amazon.awssdk.services.codeartifact.model.UpdateRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.UpstreamRepository;
@@ -62,7 +68,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
     final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
         .name(REPO_NAME)
         .administratorAccount(ADMIN_ACCOUNT)
-        .arn(REPO_ARN)
+        .arn(REPO_ARN_WITH_DOMAIN_OWNER)
         .description(DESCRIPTION)
         .domainOwner(DOMAIN_OWNER)
         .domainName(DOMAIN_NAME)
@@ -73,6 +79,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
         proxy = new AmazonWebServicesClientProxy(logger, MOCK_CREDENTIALS, () -> Duration.ofSeconds(600).toMillis());
         codeartifactClient = mock(CodeartifactClient.class);
         proxyClient = MOCK_PROXY(proxy, codeartifactClient);
+    }
+
+    @AfterEach
+    public void tear_down() {
+        verify(codeartifactClient, atLeastOnce()).serviceName();
+        verifyNoMoreInteractions(codeartifactClient);
     }
 
     @Test
@@ -92,7 +104,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -121,6 +133,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
     }
 
@@ -141,7 +155,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .permissionsPolicyDocument(TEST_POLICY_DOC_0)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -171,7 +185,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
         verify(codeartifactClient).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
     }
 
     @Test
@@ -189,7 +205,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -209,6 +225,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).deleteRepositoryPermissionsPolicy(any(DeleteRepositoryPermissionsPolicyRequest.class));
     }
 
@@ -226,7 +244,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(
                 UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_0).build(),
                 UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_1).build()
@@ -241,7 +259,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .build();
@@ -268,6 +286,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
     }
 
@@ -284,7 +304,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -295,7 +315,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -325,6 +345,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertSuccess(response, desiredOutputModel);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(updateRepositoryRequestArgumentCaptor.capture());
 
         UpdateRepositoryRequest updateRepositoryRequest = updateRepositoryRequestArgumentCaptor.getValue();
@@ -349,7 +371,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -368,7 +390,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .externalConnections(Collections.singletonList(NPM_EC))
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -393,6 +415,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
 
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
@@ -414,7 +439,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .build();
@@ -424,7 +449,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
@@ -432,7 +457,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .externalConnections(
                 Collections.singletonList(
                     RepositoryExternalConnectionInfo.builder()
@@ -466,6 +491,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         //Should first remove upstreams then add external connections
         InOrder inOrderVerifier = inOrder(codeartifactClient);
 
@@ -497,7 +525,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -505,7 +533,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
@@ -513,7 +541,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -541,6 +569,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         //Should first remove upstreams then add external connections
 
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
@@ -565,7 +596,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .build();
 
         final ResourceModel desiredOutputModel = ResourceModel.builder()
@@ -573,7 +604,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(Collections.singletonList(NPM_EC))
             .build();
@@ -588,7 +619,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -616,10 +647,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
-
-
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient).updateRepository(any(UpdateRepositoryRequest.class));
-
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
 
@@ -639,7 +669,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
             .build();
@@ -649,7 +679,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(UPSTREAMS)
             .description(DESCRIPTION)
             .build();
@@ -657,7 +687,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .upstreams(
                 UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_0).build(),
                 UpstreamRepositoryInfo.builder().repositoryName(UPSTREAM_1).build()
@@ -688,6 +718,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         InOrder inOrderVerifier = inOrder(codeartifactClient);
 
         // verify first remove externalConnections then add external connections
@@ -722,7 +755,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -740,7 +773,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .externalConnections(Collections.singletonList(NPM_EC))
             .description(DESCRIPTION)
             .build();
@@ -752,7 +785,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .repositoryName(REPO_NAME)
             .externalConnections(Collections.singletonList(NPM_EC))
 
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
@@ -772,6 +805,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, desiredOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
         verify(codeartifactClient, never()).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
@@ -797,14 +833,14 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .name(REPO_NAME)
             .repositoryName(REPO_NAME)
             .externalConnections(Collections.singletonList(NPM_EC))
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .build();
 
         final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .externalConnections(
                 Collections.singletonList(
@@ -834,6 +870,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
         assertSuccess(response, expectedOutputModel);
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+
         verify(codeartifactClient, never()).updateRepository(any(UpdateRepositoryRequest.class));
         verify(codeartifactClient).disassociateExternalConnection(any(DisassociateExternalConnectionRequest.class));
         verify(codeartifactClient).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
@@ -848,7 +887,6 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
             .externalConnections(Arrays.asList(NPM_EC, PYPI_EC))
-            .description(DESCRIPTION)
             .build();
 
         // describe repo response has no external connections, we need to add the one in the ResourceModel
@@ -870,14 +908,286 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
         verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
         verify(codeartifactClient, times(2)).associateExternalConnection(any(AssociateExternalConnectionRequest.class));
     }
+
+    @Test
+    public void handleRequest_addTags_withDomainOwnerInTemplate_adminAccountIsDifferent() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
+            .description(DESCRIPTION)
+            .build();
+
+        // expected Arn domainOwner should be with the passed in domainOwner from the template
+        String expectedRepoArn = getExpectedRepoArn(REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(expectedRepoArn)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(ADMIN_ACCOUNT)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(resourceModel(null))
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        ArgumentCaptor<TagResourceRequest> tagResourceCaptor
+            = ArgumentCaptor.forClass(TagResourceRequest.class);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).tagResource(tagResourceCaptor.capture());
+
+        TagResourceRequest capturedRequest = tagResourceCaptor.getValue();
+
+        assertThat(capturedRequest.resourceArn()).isEqualTo(expectedRepoArn);
+    }
+
+    @Test
+    public void handleRequest_addTags_withOutDomainOwnerInTemplate() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .tags(RESOURCE_MODEL_TAGS)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        // expected Arn domainOwner should be with the admin account id from the request
+        String expectedRepoArn = getExpectedRepoArn(REGION, ADMIN_ACCOUNT, DOMAIN_NAME, REPO_NAME);
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(expectedRepoArn)
+            .description(DESCRIPTION)
+            .build();
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(expectedRepoArn)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(ADMIN_ACCOUNT)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        ArgumentCaptor<TagResourceRequest> tagResourceCaptor
+            = ArgumentCaptor.forClass(TagResourceRequest.class);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).tagResource(tagResourceCaptor.capture());
+
+        TagResourceRequest capturedRequest = tagResourceCaptor.getValue();
+
+        // expected Arn domainOwner should be with the admin account id from the request
+        assertThat(capturedRequest.resourceArn()).isEqualTo(expectedRepoArn);
+    }
+
+    @Test
+    public void handleRequest_removeTags_withDomainOwnerInTemplate_adminAccountIsDifferent() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
+            .description(DESCRIPTION)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(ADMIN_ACCOUNT)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+
+
+        ArgumentCaptor<UntagResourceRequest> untagResourceCaptor
+            = ArgumentCaptor.forClass(UntagResourceRequest.class);
+
+        verify(codeartifactClient).untagResource(untagResourceCaptor.capture());
+
+        UntagResourceRequest capturedRequest = untagResourceCaptor.getValue();
+
+        // expected Arn domainOwner should be with the passed in domainOwner from the template
+        String expectedRepoArn = getExpectedRepoArn(REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+        assertThat(capturedRequest.resourceArn()).isEqualTo(expectedRepoArn);
+    }
+
+    @Test
+    public void handleRequest_removeTags_withoutDomainOwnerInTemplate() throws JsonProcessingException {
+        final UpdateHandler handler = new UpdateHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        ResourceModel previousModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .repositoryName(REPO_NAME)
+            .build();
+
+        // expected Arn domainOwner should be with the admin account id from the request
+        String expectedRepoArn = getExpectedRepoArn(REGION, ADMIN_ACCOUNT, DOMAIN_NAME, REPO_NAME);
+
+        final RepositoryDescription repositoryDescription = RepositoryDescription.builder()
+            .name(REPO_NAME)
+            .administratorAccount(ADMIN_ACCOUNT)
+            .arn(expectedRepoArn)
+            .description(DESCRIPTION)
+            .domainOwner(DOMAIN_OWNER)
+            .domainName(DOMAIN_NAME)
+            .build();
+
+        final ResourceModel desiredOutputModel = ResourceModel.builder()
+            .domainName(DOMAIN_NAME)
+            .domainOwner(DOMAIN_OWNER)
+            .name(REPO_NAME)
+            .repositoryName(REPO_NAME)
+            .arn(expectedRepoArn)
+            .description(DESCRIPTION)
+            .build();
+
+        DescribeRepositoryResponse describeRepositoryResponse = DescribeRepositoryResponse.builder()
+            .repository(repositoryDescription)
+            .build();
+
+        when(proxyClient.client().describeRepository(any(DescribeRepositoryRequest.class))).thenReturn(describeRepositoryResponse);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .previousResourceTags(DESIRED_TAGS_MAP)
+            .awsPartition(PARTITION)
+            .awsAccountId(ADMIN_ACCOUNT)
+            .region(REGION)
+            .desiredResourceState(model)
+            .previousResourceState(previousModel)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertSuccess(response, desiredOutputModel);
+
+        ArgumentCaptor<UntagResourceRequest> untagResourceCaptor
+            = ArgumentCaptor.forClass(UntagResourceRequest.class);
+
+        verify(codeartifactClient).untagResource(untagResourceCaptor.capture());
+
+
+        verify(codeartifactClient).describeRepository(any(DescribeRepositoryRequest.class));
+        verify(codeartifactClient).getRepositoryPermissionsPolicy(any(GetRepositoryPermissionsPolicyRequest.class));
+        verify(codeartifactClient).listTagsForResource(any(ListTagsForResourceRequest.class));
+        verify(codeartifactClient, never()).putRepositoryPermissionsPolicy(any(PutRepositoryPermissionsPolicyRequest.class));
+
+        verify(codeartifactClient).untagResource(untagResourceCaptor.capture());
+
+        UntagResourceRequest capturedRequest = untagResourceCaptor.getValue();
+        assertThat(capturedRequest.resourceArn()).isEqualTo(expectedRepoArn);
+    }
+
+
 
     RepositoryDescription RepoInfoWithOutExternalConnections() {
         return RepositoryDescription.builder()
             .name(REPO_NAME)
             .administratorAccount(ADMIN_ACCOUNT)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .description(DESCRIPTION)
             .domainOwner(DOMAIN_OWNER)
             .domainName(DOMAIN_NAME)
@@ -889,7 +1199,7 @@ public class UpdateHandlerTest extends AbstractTestBase {
             .domainName(DOMAIN_NAME)
             .domainOwner(DOMAIN_OWNER)
             .repositoryName(REPO_NAME)
-            .arn(REPO_ARN)
+            .arn(REPO_ARN_WITH_DOMAIN_OWNER)
             .externalConnections(Collections.singletonList(PYPI_EC))
             .description(DESCRIPTION)
             .build();

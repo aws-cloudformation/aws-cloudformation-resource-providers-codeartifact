@@ -10,6 +10,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -30,9 +31,9 @@ import software.amazon.awssdk.services.codeartifact.model.InternalServerExceptio
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.codeartifact.model.ServiceQuotaExceededException;
 import software.amazon.cloudformation.exceptions.CfnAccessDeniedException;
-import software.amazon.cloudformation.exceptions.CfnGeneralServiceException;
+import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.exceptions.CfnNotFoundException;
-import software.amazon.cloudformation.exceptions.CfnResourceConflictException;
+import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorException;
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.OperationStatus;
@@ -131,13 +132,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
             .logicalResourceIdentifier(DOMAIN_ARN)
             .build();
 
-        try {
-            final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
-            fail("Expected Exception");
-        } catch (CfnResourceConflictException e) {
-            //Expected
-
-        }
+        assertThrows(CfnInvalidRequestException.class, () -> handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger));
 
         verify(codeartifactClient).deleteDomain(any(DeleteDomainRequest.class));
         verify(codeartifactClient, times(1)).describeDomain(any(DescribeDomainRequest.class));
@@ -243,7 +238,7 @@ public class DeleteHandlerTest extends AbstractTestBase {
         try {
             final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
             fail("Expected Exception");
-        } catch (CfnGeneralServiceException e) {
+        } catch (CfnServiceInternalErrorException e) {
             //Expected
 
         }
@@ -276,5 +271,48 @@ public class DeleteHandlerTest extends AbstractTestBase {
         }
 
         verify(codeartifactClient).describeDomain(any(DescribeDomainRequest.class));
+    }
+
+    @Test
+    public void handleRequest_simpleSuccess_onlyArn() {
+        final DeleteHandler handler = new DeleteHandler();
+
+        final ResourceModel model = ResourceModel.builder()
+            .arn(DOMAIN_ARN)
+            .build();
+
+        DeleteDomainResponse deleteDomainResponse = DeleteDomainResponse.builder()
+            .build();
+
+        when(proxyClient.client().deleteDomain(any(DeleteDomainRequest.class))).thenReturn(deleteDomainResponse);
+
+        DescribeDomainResponse describeDomainResponse = DescribeDomainResponse.builder()
+            .domain(domainDescription)
+            .build();
+
+        // first, when checking if domain exists to be deleted
+        // second, to check if domain has been deleted
+        when(proxyClient.client().describeDomain(any(DescribeDomainRequest.class)))
+            .thenReturn(describeDomainResponse)
+            .thenThrow(ResourceNotFoundException.class);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .logicalResourceIdentifier(DOMAIN_ARN)
+            .build();
+
+        final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
+        assertThat(response.getCallbackDelaySeconds()).isEqualTo(0);
+        assertThat(response.getResourceModel()).isNull();
+        assertThat(response.getResourceModels()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getErrorCode()).isNull();
+
+        verify(codeartifactClient).deleteDomain(any(DeleteDomainRequest.class));
+        verify(codeartifactClient, times(2)).describeDomain(any(DescribeDomainRequest.class));
+
     }
 }

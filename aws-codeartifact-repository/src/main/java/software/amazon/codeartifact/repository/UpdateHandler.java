@@ -1,5 +1,9 @@
 package software.amazon.codeartifact.repository;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +16,9 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.DeleteRepositoryPermissionsPolicyResponse;
 import software.amazon.awssdk.services.codeartifact.model.DisassociateExternalConnectionRequest;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
+import software.amazon.awssdk.services.codeartifact.model.TagResourceRequest;
+import software.amazon.awssdk.services.codeartifact.model.UntagResourceRequest;
 import software.amazon.cloudformation.exceptions.CfnNotUpdatableException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
@@ -57,7 +64,60 @@ public class UpdateHandler extends BaseHandlerStd {
         }
         return updateRepositoryConnectionsEvent
             .then(progress -> updateRepositoryPermissionsPolicy(proxy, progress, callbackContext, request, proxyClient, logger))
+            .then(progress -> updateTags(proxy, proxyClient, progress, desiredModel, request))
             .then(progress -> new ReadHandler().handleRequest(proxy, request, callbackContext, proxyClient, logger));
+    }
+
+    private ProgressEvent<ResourceModel,CallbackContext> updateTags(
+        final AmazonWebServicesClientProxy proxy,
+        final ProxyClient<CodeartifactClient> proxyClient,
+        final ProgressEvent<ResourceModel, CallbackContext> progress,
+        ResourceModel desiredModel,
+        final ResourceHandlerRequest<ResourceModel> request
+    ) {
+        String repositoryName = desiredModel.getRepositoryName();
+        String domainName = desiredModel.getDomainName();
+
+        // TODO(jonjara): move this to shared module
+        Map<String, String> desiredResourceTags = request.getDesiredResourceTags();
+        Map<String, String> previousResourceTags = request.getPreviousResourceTags();
+
+        final Set<Tag> desiredSdkTags = new HashSet<>(Translator.translateTagsToSdk(desiredResourceTags));
+        final Set<Tag> previousSdkTags = new HashSet<>(Translator.translateTagsToSdk(previousResourceTags));
+
+        final Set<Tag> setTagsToRemove = Sets.difference(previousSdkTags, desiredSdkTags);
+        final Set<Tag> setTagsToAdd = Sets.difference(desiredSdkTags, previousSdkTags);
+
+        final List<Tag> tagsToRemove = new ArrayList<>(setTagsToRemove);
+        final List<Tag> tagsToAdd = new ArrayList<>(setTagsToAdd);
+
+        String domainOwner = desiredModel.getDomainOwner() == null ?
+            request.getAwsAccountId() :
+            desiredModel.getDomainOwner();
+
+        try {
+            // Deletes tags only if tagsToRemove is not empty.
+            if (!CollectionUtils.isNullOrEmpty(tagsToRemove)) {
+                UntagResourceRequest untagRequest
+                    = Translator.untagResourceRequest(request, tagsToRemove, repositoryName, domainName, domainOwner);
+                proxy.injectCredentialsAndInvokeV2(untagRequest, proxyClient.client()::untagResource);
+            }
+        } catch (AwsServiceException e) {
+            Translator.throwCfnException(e, Constants.UNTAG_RESOURCE, repositoryName);
+        }
+
+        try {
+            // Adds tags only if tagsToAdd is not empty.
+            if (!CollectionUtils.isNullOrEmpty(tagsToAdd)) {
+                TagResourceRequest tagRequest
+                    = Translator.tagResourceRequest(request, tagsToAdd, repositoryName, domainName, domainOwner);
+                proxy.injectCredentialsAndInvokeV2(tagRequest, proxyClient.client()::tagResource);
+            }
+        } catch (AwsServiceException e) {
+            Translator.throwCfnException(e, Constants.TAG_RESOURCE, repositoryName);
+        }
+
+        return ProgressEvent.progress(progress.getResourceModel(), progress.getCallbackContext());
     }
 
     protected ProgressEvent<ResourceModel, CallbackContext> updateExternalConnections(

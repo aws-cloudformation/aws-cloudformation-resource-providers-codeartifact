@@ -1,0 +1,29 @@
+Description:
+  Dependencies for AWS::CodeArtifact::Repository Contract Tests
+
+Resources:
+  DomainForContractTests:
+    Type: AWS::CodeArtifact::Domain
+    Properties:
+      DomainName: "domain-contract-test"
+
+  UpstreamForContractTests:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      RepositoryName: "upstream-repo-contract-test"
+      Description: "upstream repo description"
+      DomainName: "domain-contract-test"
+      ExternalConnections:
+        - public:npmjs
+    DependsOn: DomainForContractTests
+
+Outputs:
+  ContractTestDomainName:
+    Value: "domain-contract-test"
+    Export:
+      Name: awscodeartifactrepositorycto1
+
+  ContractTestUpstreamRepositoryName:
+    Value: "upstream-repo-contract-test"
+    Export:
+      Name: awscodeartifactrepositorycto2

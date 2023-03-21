@@ -4,12 +4,15 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.DescribeRepositoryResponse;
 import software.amazon.awssdk.services.codeartifact.model.GetRepositoryPermissionsPolicyResponse;
+import software.amazon.awssdk.services.codeartifact.model.ListTagsForResourceResponse;
 import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import java.util.List;
 
 public class ReadHandler extends BaseHandlerStd {
     private Logger logger;
@@ -28,9 +31,41 @@ public class ReadHandler extends BaseHandlerStd {
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
             .then(progress -> describeRepository(proxy, progress, request, proxyClient))
             .then(progress -> getRepositoryPolicy(proxy, progress, request, proxyClient))
+            .then(progress -> listTags(proxy, progress, request, proxyClient))
             .then(progress -> {
                 final ResourceModel model = progress.getResourceModel();
                 return ProgressEvent.defaultSuccessHandler(model);
+            });
+
+    }
+
+    private ProgressEvent<ResourceModel, CallbackContext> listTags(
+        AmazonWebServicesClientProxy proxy,
+        ProgressEvent<ResourceModel, CallbackContext> progress,
+        ResourceHandlerRequest<ResourceModel> request,
+        ProxyClient<CodeartifactClient> proxyClient
+    ) {
+        return proxy.initiate("AWS-CodeArtifact-Repository::ListTags", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
+            .translateToServiceRequest(Translator::translateToListTagsRequest)
+            .makeServiceCall((awsRequest, client) -> {
+                logger.log(String.format("%s ListTags is being invoked", ResourceModel.TYPE_NAME));
+
+                ListTagsForResourceResponse listTagsResponse = null;
+                try {
+                    listTagsResponse = client.injectCredentialsAndInvokeV2(awsRequest, proxyClient.client()::listTagsForResource);
+                } catch (final AwsServiceException e) {
+                    String domainName = request.getDesiredResourceState().getDomainName();
+                    Translator.throwCfnException(e, Constants.LIST_TAGS_FOR_RESOURCE, domainName);
+                }
+                logger.log(String.format("Tags of %s has successfully been read.", ResourceModel.TYPE_NAME));
+                return listTagsResponse;
+            })
+            .done((ListTagsForResourceRequest, listTagsResponse, proxyInvocation, resourceModel, context) -> {
+                if (listTagsResponse != null) {
+                    List<Tag> tags = listTagsResponse.tags();
+                    resourceModel.setTags(Translator.fromListTagsResponse(tags));
+                }
+                return ProgressEvent.progress(resourceModel, context);
             });
 
     }

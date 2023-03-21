@@ -14,6 +14,7 @@ import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 
 
 public class CreateHandler extends BaseHandlerStd {
+    private static final int CALLBACK_DELAY_SECONDS = 1;
     private Logger logger;
 
     protected ProgressEvent<ResourceModel, CallbackContext> handleRequest(
@@ -43,11 +44,21 @@ public class CreateHandler extends BaseHandlerStd {
         ResourceHandlerRequest<ResourceModel> request,
         ProxyClient<CodeartifactClient> proxyClient
     ) {
+        CallbackContext callbackContext = progress.getCallbackContext();
+
+        logger.log(String.format("isCreatedFlag: %s", callbackContext.isCreated()));
+        if (callbackContext.isCreated()) {
+            // This happens when handler gets called again during callback delay or the handler is retrying
+            // after domain was created already. This will prevent 409s on retry.
+            logger.log("Domain was already created, will not call CreateDomain again.");
+            return ProgressEvent.progress(progress.getResourceModel(), callbackContext);
+        }
+
         return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient,progress.getResourceModel(), progress.getCallbackContext())
-            .translateToServiceRequest(Translator::translateToCreateRequest)
+            .translateToServiceRequest((model) -> Translator.translateToCreateRequest(model, request.getDesiredResourceTags()))
             .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
-            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client))
-            .progress();
+            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, callbackContext))
+            .progress(CALLBACK_DELAY_SECONDS);
     }
 
     private CreateDomainResponse createDomainSdkCall(
@@ -63,7 +74,7 @@ public class CreateHandler extends BaseHandlerStd {
             Translator.throwCfnException(e, Constants.CREATE_DOMAIN, domainName);
         }
 
-        logger.log(String.format("%s successfully created.", ResourceModel.TYPE_NAME));
+        logger.log(String.format("%s [%s] Created Successfully", ResourceModel.TYPE_NAME, domainName));
         return awsResponse;
     }
 
@@ -73,7 +84,8 @@ public class CreateHandler extends BaseHandlerStd {
 
     private boolean isStabilized(
         final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient
+        final ProxyClient<CodeartifactClient> proxyClient,
+        CallbackContext callbackContext
     ) {
         DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
             Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
@@ -87,6 +99,7 @@ public class CreateHandler extends BaseHandlerStd {
 
         if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
             logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
+            callbackContext.setCreated(true);
             return true;
         }
 

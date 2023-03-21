@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,8 +34,8 @@ public class AbstractTestBase {
   protected static final String DOMAIN_OWNER = "12345";
   protected static final String ADMIN_ACCOUNT = "54321";
   protected static final String REPO_NAME = "test-repo-name";
-  protected static final String REPO_ARN = String.format("arn:aws:codeartifact:%s:%s:repository/%s/%s",
-      REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+  protected static final String REPO_ARN_WITH_DOMAIN_OWNER = getExpectedRepoArn(REGION, DOMAIN_OWNER, DOMAIN_NAME, REPO_NAME);
+
   protected static final Map<String, Object> TEST_POLICY_DOC_0 = Collections.singletonMap("key0", "value0");
   protected static final Map<String, Object> TEST_POLICY_DOC_1 = Collections.singletonMap("key1", "value1");
 
@@ -43,6 +45,18 @@ public class AbstractTestBase {
   protected final String UPSTREAM_1 = "upstream1";
   protected final String NPM_EC = "public:npmjs";
   protected final String PYPI_EC = "public:pypi";
+
+  protected final List<software.amazon.awssdk.services.codeartifact.model.Tag> SERVICE_TAGS = ImmutableList.of(
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key1").value("value1").build(),
+      software.amazon.awssdk.services.codeartifact.model.Tag.builder().key("key2").value("value2").build()
+  );
+  protected final List<Tag> RESOURCE_MODEL_TAGS = ImmutableList.of(
+      Tag.builder().key("key1").value("value1").build(),
+      Tag.builder().key("key2").value("value2").build());
+
+  protected final Map<String, String> DESIRED_TAGS_MAP = ImmutableMap.of(
+      "key1","value1",
+      "key2","value2");
 
   protected final List<String> UPSTREAMS = Arrays.asList(UPSTREAM_0,UPSTREAM_1);
 
@@ -94,6 +108,17 @@ public class AbstractTestBase {
         return sdkClient;
       }
     };
+  }
+
+
+  protected static String getExpectedRepoArn(
+      String region,
+      String domainOwner,
+      String domainName,
+      String repoName
+  ) {
+    return String.format("arn:aws:codeartifact:%s:%s:repository/%s/%s",
+        region, domainOwner, domainName, repoName);
   }
 
   protected void assertSuccess(
