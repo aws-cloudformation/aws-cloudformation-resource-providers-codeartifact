@@ -55,16 +55,17 @@ public class CreateHandler extends BaseHandlerStd {
             return ProgressEvent.progress(progress.getResourceModel(), callbackContext);
         }
 
-        return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient,progress.getResourceModel(), progress.getCallbackContext())
+        return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
             .translateToServiceRequest((model) -> Translator.translateToCreateRequest(model, request.getDesiredResourceTags()))
-            .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
-            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, callbackContext))
+            .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, callbackContext, awsRequest))
+            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client))
             .progress(CALLBACK_DELAY_SECONDS);
     }
 
     private CreateDomainResponse createDomainSdkCall(
-        ProgressEvent<ResourceModel, CallbackContext>  progress,
+        ProgressEvent<ResourceModel, CallbackContext> progress,
         ProxyClient<CodeartifactClient> client,
+        CallbackContext callbackContext,
         CreateDomainRequest awsRequest
     ) {
         CreateDomainResponse awsResponse = null;
@@ -76,6 +77,7 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         logger.log(String.format("%s [%s] Created Successfully", ResourceModel.TYPE_NAME, domainName));
+        callbackContext.setCreated(true);
         return awsResponse;
     }
 
@@ -85,8 +87,7 @@ public class CreateHandler extends BaseHandlerStd {
 
     private boolean isStabilized(
         final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient,
-        CallbackContext callbackContext
+        final ProxyClient<CodeartifactClient> proxyClient
     ) {
         try {
             DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
@@ -101,7 +102,6 @@ public class CreateHandler extends BaseHandlerStd {
 
             if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
                 logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
-                callbackContext.setCreated(true);
                 return true;
             }
 
