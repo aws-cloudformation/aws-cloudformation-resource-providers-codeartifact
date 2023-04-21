@@ -5,6 +5,7 @@ import software.amazon.awssdk.services.codeartifact.CodeartifactClient;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainRequest;
 import software.amazon.awssdk.services.codeartifact.model.CreateDomainResponse;
 import software.amazon.awssdk.services.codeartifact.model.DescribeDomainResponse;
+import software.amazon.awssdk.services.codeartifact.model.ResourceNotFoundException;
 import software.amazon.cloudformation.exceptions.CfnInvalidRequestException;
 import software.amazon.cloudformation.proxy.AmazonWebServicesClientProxy;
 import software.amazon.cloudformation.proxy.Logger;
@@ -54,17 +55,16 @@ public class CreateHandler extends BaseHandlerStd {
             return ProgressEvent.progress(progress.getResourceModel(), callbackContext);
         }
 
-        return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient, progress.getResourceModel(), progress.getCallbackContext())
+        return proxy.initiate("AWS-CodeArtifact-Domain::Create", proxyClient,progress.getResourceModel(), progress.getCallbackContext())
             .translateToServiceRequest((model) -> Translator.translateToCreateRequest(model, request.getDesiredResourceTags()))
-            .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, callbackContext, awsRequest))
-            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client))
+            .makeServiceCall((awsRequest, client) -> createDomainSdkCall(progress, client, awsRequest))
+            .stabilize((awsRequest, awsResponse, client, model, context) -> isStabilized(model, client, callbackContext))
             .progress(CALLBACK_DELAY_SECONDS);
     }
 
     private CreateDomainResponse createDomainSdkCall(
-        ProgressEvent<ResourceModel, CallbackContext> progress,
+        ProgressEvent<ResourceModel, CallbackContext>  progress,
         ProxyClient<CodeartifactClient> client,
-        CallbackContext callbackContext,
         CreateDomainRequest awsRequest
     ) {
         CreateDomainResponse awsResponse = null;
@@ -76,7 +76,6 @@ public class CreateHandler extends BaseHandlerStd {
         }
 
         logger.log(String.format("%s [%s] Created Successfully", ResourceModel.TYPE_NAME, domainName));
-        callbackContext.setCreated(true);
         return awsResponse;
     }
 
@@ -86,23 +85,29 @@ public class CreateHandler extends BaseHandlerStd {
 
     private boolean isStabilized(
         final ResourceModel model,
-        final ProxyClient<CodeartifactClient> proxyClient
+        final ProxyClient<CodeartifactClient> proxyClient,
+        CallbackContext callbackContext
     ) {
-        DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
-            Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
+        try {
+            DescribeDomainResponse describeDomainResponse = proxyClient.injectCredentialsAndInvokeV2(
+                Translator.translateToReadRequest(model), proxyClient.client()::describeDomain);
 
-        String domainStatus = describeDomainResponse.domain()
-            .status()
-            .toString();
+            String domainStatus = describeDomainResponse.domain()
+                .status()
+                .toString();
 
-        model.setArn(describeDomainResponse.domain().arn());
-        logger.log(String.format("Status of domain: %s", domainStatus));
+            model.setArn(describeDomainResponse.domain().arn());
+            logger.log(String.format("Status of domain: %s", domainStatus));
 
-        if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
-            logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
-            return true;
+            if (domainStatus.equals(Constants.ACTIVE_STATUS)) {
+                logger.log(String.format("%s successfully stabilized.", ResourceModel.TYPE_NAME));
+                callbackContext.setCreated(true);
+                return true;
+            }
+
+        } catch (ResourceNotFoundException ex) {
+            // This exception means the resource has not stabilized
         }
-
         return false;
     }
 
