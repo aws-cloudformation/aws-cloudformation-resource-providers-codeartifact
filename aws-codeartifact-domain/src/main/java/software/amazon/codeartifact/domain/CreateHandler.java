@@ -32,6 +32,9 @@ public class CreateHandler extends BaseHandlerStd {
             throw new CfnInvalidRequestException("Attempting to set a ReadOnly Property.");
         }
 
+        // Setting primaryId first in case rollback occurs, we need the Id to be able to rollback
+        setPrimaryIdentifier(request, model);
+
         this.logger = logger;
         return ProgressEvent.progress(request.getDesiredResourceState(), callbackContext)
             .then(progress -> createDomain(proxy, progress, request, proxyClient))
@@ -109,6 +112,19 @@ public class CreateHandler extends BaseHandlerStd {
             // This exception means the resource has not stabilized
         }
         return false;
+    }
+
+    private void setPrimaryIdentifier(ResourceHandlerRequest<ResourceModel> request, ResourceModel model) {
+        String domainOwner = model.getOwner() == null ? request.getAwsAccountId() : model.getOwner();
+
+        Arn domainArn = ArnUtils.domainArn(
+            request.getAwsPartition(),
+            request.getRegion(),
+            domainOwner,
+            model.getDomainName()
+        );
+
+        model.setArn(domainArn.arn());
     }
 
 }

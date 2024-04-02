@@ -11,12 +11,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: software.amazon.codeartifact.repository.HandlerWrapper::handleRequest
-      Runtime: java8
+      Runtime: java11
       CodeUri: ./target/aws-codeartifact-repository-handler-1.0-SNAPSHOT.jar
 
   TestEntrypoint:
     Type: AWS::Serverless::Function
     Properties:
       Handler: software.amazon.codeartifact.repository.HandlerWrapper::testEntrypoint
-      Runtime: java8
+      Runtime: java11
       CodeUri: ./target/aws-codeartifact-repository-handler-1.0-SNAPSHOT.jar

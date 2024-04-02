@@ -54,6 +54,8 @@ import software.amazon.cloudformation.exceptions.CfnServiceInternalErrorExceptio
 import software.amazon.cloudformation.exceptions.CfnServiceLimitExceededException;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
 import software.amazon.codeartifact.repository.ResourceModel.ResourceModelBuilder;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
+import software.amazon.awssdk.utils.CollectionUtils;
 
 /**
  * This class is a centralized placeholder for

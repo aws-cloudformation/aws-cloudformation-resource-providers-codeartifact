@@ -7,9 +7,10 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - aws cloudformation create-stack --stack-name repository-ctv2-prescript --template-body file://prescript.yml
-      - aws cloudformation wait stack-create-complete --stack-name repository-ctv2-prescript
-      - echo "Created stack repository-ctv2-pre-script"
+      - IFS=\/ read -r pre accountId post <<< $CODEBUILD_SOURCE_REPO_URL
+      - aws cloudformation create-stack --stack-name repository-ctv2-prescript-$accountId --template-body file://prescript.yml --parameters ParameterKey=CallerAccount,ParameterValue=$accountId
+      - aws cloudformation wait stack-create-complete --stack-name repository-ctv2-prescript-$accountId
+      - echo "Created stack repository-ctv2-prescript-$accountId"
       - aws cloudformation list-exports | jq -r '.'
   post_build:
     commands:

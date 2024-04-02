@@ -8,9 +8,10 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - aws cloudformation delete-stack --stack-name repository-ctv2-prescript
-      - aws cloudformation wait stack-delete-complete --stack-name repository-ctv2-prescript
-      - echo "Deleted stack repository-ctv2-prescript"
+      - IFS=\/ read -r pre accountId post <<< $CODEBUILD_SOURCE_REPO_URL
+      - aws cloudformation delete-stack --stack-name repository-ctv2-prescript-$accountId
+      - aws cloudformation wait stack-delete-complete --stack-name repository-ctv2-prescript-$accountId
+      - echo "Deleted stack repository-ctv2-prescript-$accountId"
   post_build:
     commands:
       - echo Build completed on `date`

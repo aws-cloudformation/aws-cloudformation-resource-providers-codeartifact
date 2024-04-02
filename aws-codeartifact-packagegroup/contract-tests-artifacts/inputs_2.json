@@ -1,0 +1,48 @@
+{
+  "CreateInputs": {
+    "DomainName": "{{awscodeartifactpackagegroupcto1}}",
+    "Pattern": "/npm/contract-test-2/{{uuid}}$",
+    "Description": "description for contract test 2",
+    "ContactInfo": "contact info for contract test 2",
+    "OriginConfiguration": {
+      "Restrictions": {
+        "Publish": {
+          "RestrictionMode": "ALLOW_SPECIFIC_REPOSITORIES",
+          "Repositories": [
+            "{{awscodeartifactpackagegroupcto2}}"
+          ]
+        },
+        "ExternalUpstream": {
+          "RestrictionMode": "ALLOW_SPECIFIC_REPOSITORIES",
+          "Repositories": [
+            "{{awscodeartifactpackagegroupcto2}}"
+          ]
+        },
+        "InternalUpstream": {
+          "RestrictionMode": "INHERIT"
+        }
+      }
+    },
+    "Tags": [
+      {
+        "Key": "key2",
+        "Value": "val2"
+      }
+    ]
+  },
+  "PatchInputs": [
+    {
+      "op": "replace",
+      "path": "/OriginConfiguration/Restrictions/InternalUpstream/RestrictionMode",
+      "value": "ALLOW"
+    },
+    {
+      "op": "replace",
+      "path": "/OriginConfiguration/Restrictions/ExternalUpstream/Repositories",
+      "value": []
+    }
+  ],
+  "ListInputs": {
+    "DomainName": "{{awscodeartifactpackagegroupcto1}}"
+  }
+}

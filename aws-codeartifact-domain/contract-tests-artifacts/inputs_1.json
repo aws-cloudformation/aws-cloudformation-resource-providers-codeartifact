@@ -1,6 +1,6 @@
 {
   "CreateInputs": {
-    "DomainName": "create-contract-domain",
+    "DomainName": "cfn-ct-domain-{{uuid}}",
     "PermissionsPolicyDocument": {
       "Version": "2012-10-17",
       "Statement": [

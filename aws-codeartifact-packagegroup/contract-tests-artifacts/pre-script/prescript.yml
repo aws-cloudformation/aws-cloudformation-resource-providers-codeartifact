@@ -1,0 +1,29 @@
+Description:
+  Dependencies for AWS::CodeArtifact::PackageGroup Contract Tests
+
+Parameters:
+  CallerAccount:
+    Type: String
+
+Resources:
+  DomainForContractTests:
+    Type: AWS::CodeArtifact::Domain
+    Properties:
+      DomainName: Fn::Sub "pg-contract-test-domain-${CallerAccount}"
+
+  RepositoryForContractTests:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      RepositoryName: Fn::Sub "pg-contract-test-repo-${CallerAccount}"
+      DomainName: Fn::GetAtt DomainForContractTests.DomainName
+
+Outputs:
+  ContractTestDomainName:
+    Value: Fn::GetAtt DomainForContractTests.DomainName
+    Export:
+      Name: awscodeartifactpackagegroupcto1
+
+  ContractTestRepositoryName:
+    Value: Fn::GetAtt RepositoryForContractTests.RepositoryName
+    Export:
+      Name: awscodeartifactpackagegroupcto2

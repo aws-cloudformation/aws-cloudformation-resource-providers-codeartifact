@@ -2,7 +2,7 @@
     "artifact_type": "RESOURCE",
     "typeName": "AWS::CodeArtifact::Repository",
     "language": "java",
-    "runtime": "java8",
+    "runtime": "java11",
     "entrypoint": "software.amazon.codeartifact.repository.HandlerWrapper::handleRequest",
     "testEntrypoint": "software.amazon.codeartifact.repository.HandlerWrapper::testEntrypoint",
     "settings": {
@@ -15,5 +15,6 @@
         "codegen_template_path": "guided_aws",
         "protocolVersion": "2.0.0"
     },
+    "logProcessorEnabled": "true",
     "executableEntrypoint": "software.amazon.codeartifact.repository.HandlerWrapperExecutable"
 }
