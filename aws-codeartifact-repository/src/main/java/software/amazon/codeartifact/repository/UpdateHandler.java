@@ -8,6 +8,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import software.amazon.awssdk.awscore.AwsResponse;
@@ -26,6 +29,7 @@ import software.amazon.cloudformation.proxy.OperationStatus;
 import software.amazon.cloudformation.proxy.ProgressEvent;
 import software.amazon.cloudformation.proxy.ProxyClient;
 import software.amazon.cloudformation.proxy.ResourceHandlerRequest;
+import software.amazon.awssdk.services.codeartifact.model.Tag;
 
 public class UpdateHandler extends BaseHandlerStd {
     private Logger logger;

@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Nothing to do in the pre_build phase...
+  build:
+    commands:
+      - echo Build started on `date`
+      - IFS=\/ read -r pre accountId post <<< $CODEBUILD_SOURCE_REPO_URL
+      - aws cloudformation create-stack --stack-name package-group-ctv2-prescript-$accountId --template-body file://prescript.yml --parameters ParameterKey=CallerAccount,ParameterValue=$accountId
+      - aws cloudformation wait stack-create-complete --stack-name package-group-ctv2-prescript-$accountId
+      - echo "Created stack package-group-ctv2-prescript-$accountId"
+      - aws cloudformation list-exports | jq -r '.'
+  post_build:
+    commands:
+      - echo Build completed on `date`

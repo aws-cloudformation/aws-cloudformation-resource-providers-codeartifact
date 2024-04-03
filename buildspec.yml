@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-        java: openjdk8
+        java: openjdk11
         python: 3.7
     commands:
       -  pip install pre-commit cloudformation-cli-java-plugin

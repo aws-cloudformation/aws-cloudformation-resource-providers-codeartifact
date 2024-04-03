@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Delay 10 seconds to delete package groups
+      - sleep 10
+  build:
+    commands:
+      - echo Build started on `date`
+      - IFS=\/ read -r pre accountId post <<< $CODEBUILD_SOURCE_REPO_URL
+      - aws cloudformation delete-stack --stack-name package-group-ctv2-prescript-$accountId
+      - aws cloudformation wait stack-delete-complete --stack-name package-group-ctv2-prescript-$accountId
+      - echo "Deleted stack package-group-ctv2-prescript-$accountId"
+  post_build:
+    commands:
+      - echo Build completed on `date`

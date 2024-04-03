@@ -122,6 +122,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -169,6 +172,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -211,6 +217,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         CallbackContext context = new CallbackContext();
@@ -262,6 +271,9 @@ public class CreateHandlerTest extends AbstractTestBase {
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -319,6 +331,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         callbackContext.setCreated(true);
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, callbackContext, proxyClient, logger);
@@ -368,6 +383,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .logicalResourceIdentifier(DOMAIN_ARN)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         try {
@@ -395,6 +413,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         when(proxyClient.client().createDomain(any(CreateDomainRequest.class))).thenThrow(AccessDeniedException.class);
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .logicalResourceIdentifier(DOMAIN_ARN)
             .build();
 
@@ -423,6 +444,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .logicalResourceIdentifier(DOMAIN_ARN)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         try {
@@ -450,6 +474,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .logicalResourceIdentifier(DOMAIN_ARN)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         try {
@@ -478,6 +505,9 @@ public class CreateHandlerTest extends AbstractTestBase {
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
             .desiredResourceState(model)
             .logicalResourceIdentifier(DOMAIN_ARN)
+            .awsPartition("aws")
+            .region("region")
+            .awsAccountId("accountId")
             .build();
 
         try {
